@@ -1,0 +1,59 @@
+🩺 1. AI Disease Diagnosis
+Prompt:
+Build a React Native screen that lets users upload or take a photo of an infected area on a cow. Integrate a TensorFlow Lite model (or tfjs-react-native) to classify the disease (e.g., Footrot, Mastitis). Display the disease name, severity, and first-aid recommendations. Use expo-image-picker or react-native-image-picker. Handle loading state, and errors gracefully.
+
+📹 2. Vet Consultation (Live Video Chat)
+Prompt:
+Create a React Native screen for scheduling and starting a live video call with a veterinary doctor using Twilio Video SDK or Daily.co. Include UI for entering a room name and joining the call. Add support for basic chat if possible. Bonus: show upcoming appointments stored in Redux.
+
+🥗 3. Nutrition Advisor
+Prompt:
+Create a React Native form that takes input like species, age, breed, and stage (e.g., pregnant, milking). Based on input, suggest feed and diet using a JSON rules file or a mock API. Render the diet plan and allow users to save it to the livestock profile.
+
+🌧️ 4. Weather-Based Disease Alerts
+Prompt:
+Create a weather alert feature in React Native using OpenWeatherMap API. Based on the weather (e.g., rainy + humid), show potential disease alerts for livestock like Footrot. Fetch weather by location and match against simple rule conditions. Store disease-alert rules in a local JSON file.
+
+💉 5. Vaccination Reminders
+Prompt:
+Develop a React Native module that schedules vaccine reminders based on livestock's birthdate and breed. Use expo-notifications or FCM for push notifications. Create a local vaccine schedule array and schedule alerts using background tasks. Persist data with AsyncStorage or SQLite.
+
+💊 6. Medicine Reminders
+Prompt:
+Build a feature in React Native to let users enter medicine name, start date, dose frequency, and duration. Use local notifications (via FCM or Expo) to remind users daily. Store reminder status locally and sync with backend.
+
+📋 7. Health History Tracker
+Prompt:
+Create a React Native screen that logs medical history for each animal. Store records such as disease name, treatment given, and vet consulted. Display history as a timeline. Use Redux or Context API for state. Save data offline using Realm DB or AsyncStorage.
+
+🚨 8. Emergency Protocol Guide
+Prompt:
+Create a static emergency guide section in React Native. It should include searchable topics (e.g., birthing complications, bloat). Each topic shows step-by-step instructions and optionally includes images. Store guide data locally to work offline.
+
+🔔 9. Push Notifications
+Prompt:
+Integrate Firebase Cloud Messaging (FCM) into a React Native app. Send and receive push notifications for reminders (vaccines, medicines), alerts (disease risk), and vet appointments. Provide device token registration and background handler setup.
+
+👤 10. User Login System
+Prompt:
+Implement Firebase Auth (or custom backend auth) in a React Native app with email/password login and signup. Securely store login tokens, validate user on app load, and protect private screens. Encrypt passwords (if using custom backend) with bcrypt.
+
+🐮 11. Multi-Livestock Profiles
+Prompt:
+Build a React Native screen to manage multiple livestock profiles. Each profile should store photo, name, age, species, breed, and status. Use Redux for state, and AsyncStorage for offline access. Allow editing and deletion of profiles.
+
+📴 12. Offline Mode Support
+Prompt:
+Implement offline-first support in a React Native app using WatermelonDB or AsyncStorage. Store livestock profiles, health records, and reminders offline. Sync with server when connectivity is restored. Detect online/offline state with @react-native-community/netinfo.
+
+📊 13. Farm Dashboard
+Prompt:
+Create a React Native dashboard showing insights like disease frequency, animal productivity, and medicine expenses. Use react-native-chart-kit or Victory Native for bar and pie charts. Pull data from Redux or a local JSON store.
+
+🌐 14. Language Localization
+Prompt:
+Implement localization in a React Native app using react-i18next. Add support for English, Hindi, and Tamil. Auto-detect device language, with an option to switch manually in app settings. Translate UI strings using JSON files per language.
+
+💬 15. Community Q&A Forum
+Prompt:
+Design a basic community forum module for a React Native app. Users can post questions, answer others, and vote answers. Use Firebase Firestore or a Node.js API for storing questions. Display replies under each question and enable keyword-based search.
