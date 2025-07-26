@@ -8,6 +8,7 @@ import {
   Stethoscope, 
   AlertTriangle, 
   MessageSquare,
+  Bot,
   LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,11 +23,12 @@ const navigation = [
   { name: "Disease Diagnosis", href: "/disease-diagnosis", icon: Stethoscope },
   { name: "Emergency Protocols", href: "/emergency-protocols", icon: AlertTriangle },
   { name: "Community Forum", href: "/community-forum", icon: MessageSquare },
+  { name: "AI Assistant", href: "/chatbot", icon: Bot },
 ];
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logoutMutation } = useAuth();
 
   const { data: livestock } = useQuery({
     queryKey: ["/api/livestock"],
@@ -36,8 +38,8 @@ export default function Sidebar() {
     queryKey: ["/api/medicine-reminders/overdue"],
   });
 
-  const safeLivestock = livestock || [];
-  const safeOverdueReminders = overdueReminders || [];
+  const safeLivestock = Array.isArray(livestock) ? livestock : [];
+  const safeOverdueReminders = Array.isArray(overdueReminders) ? overdueReminders : [];
   const livestockCount = safeLivestock.length;
   const overdueCount = safeOverdueReminders.length;
 
@@ -100,10 +102,11 @@ export default function Sidebar() {
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => window.location.href = "/api/logout"}
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Sign Out
+            {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
           </Button>
         </div>
       </div>

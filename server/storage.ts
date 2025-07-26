@@ -8,8 +8,10 @@ import {
   forumPosts,
   forumReplies,
   activityLogs,
+  chatbotConversations,
+  chatbotMessages,
   type User,
-  type UpsertUser,
+  type InsertUser,
   type Livestock,
   type InsertLivestock,
   type HealthRecord,
@@ -25,15 +27,20 @@ import {
   type InsertForumReply,
   type ActivityLog,
   type InsertActivityLog,
+  type ChatbotConversation,
+  type InsertChatbotConversation,
+  type ChatbotMessage,
+  type InsertChatbotMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, or, like, gte, lte, count } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   
   // Livestock operations
   getLivestock(userId: string): Promise<Livestock[]>;
@@ -80,6 +87,13 @@ export interface IStorage {
     pendingReminders: number;
     monthlyExpenses: number;
   }>;
+  
+  // Chatbot operations
+  getChatbotConversations(userId: string): Promise<ChatbotConversation[]>;
+  getChatbotConversation(conversationId: string, userId: string): Promise<ChatbotConversation | undefined>;
+  createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation>;
+  getChatbotMessages(conversationId: string): Promise<ChatbotMessage[]>;
+  createChatbotMessage(message: InsertChatbotMessage): Promise<ChatbotMessage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -89,17 +103,15 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
   }
@@ -505,6 +517,52 @@ export class DatabaseStorage implements IStorage {
       pendingReminders: pendingMedicineResult.count + pendingVaccinationResult.count,
       monthlyExpenses: Math.round(monthlyExpenses * 100) / 100, // Round to 2 decimal places
     };
+  }
+
+  // Chatbot operations
+  async getChatbotConversations(userId: string): Promise<ChatbotConversation[]> {
+    return await db
+      .select()
+      .from(chatbotConversations)
+      .where(eq(chatbotConversations.userId, userId))
+      .orderBy(desc(chatbotConversations.updatedAt));
+  }
+
+  async getChatbotConversation(conversationId: string, userId: string): Promise<ChatbotConversation | undefined> {
+    const [conversation] = await db
+      .select()
+      .from(chatbotConversations)
+      .where(
+        and(
+          eq(chatbotConversations.id, conversationId),
+          eq(chatbotConversations.userId, userId)
+        )
+      );
+    return conversation;
+  }
+
+  async createChatbotConversation(conversation: InsertChatbotConversation): Promise<ChatbotConversation> {
+    const [newConversation] = await db
+      .insert(chatbotConversations)
+      .values(conversation)
+      .returning();
+    return newConversation;
+  }
+
+  async getChatbotMessages(conversationId: string): Promise<ChatbotMessage[]> {
+    return await db
+      .select()
+      .from(chatbotMessages)
+      .where(eq(chatbotMessages.conversationId, conversationId))
+      .orderBy(chatbotMessages.createdAt);
+  }
+
+  async createChatbotMessage(message: InsertChatbotMessage): Promise<ChatbotMessage> {
+    const [newMessage] = await db
+      .insert(chatbotMessages)
+      .values(message)
+      .returning();
+    return newMessage;
   }
 }
 

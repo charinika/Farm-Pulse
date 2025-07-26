@@ -1,7 +1,8 @@
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated } from "./auth";
+import { createChatCompletion, createSystemPrompt } from "./openai";
 import {
   insertLivestockSchema,
   insertHealthRecordSchema,
@@ -10,6 +11,8 @@ import {
   insertForumPostSchema,
   insertForumReplySchema,
   insertActivityLogSchema,
+  insertChatbotConversationSchema,
+  insertChatbotMessageSchema,
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -40,24 +43,14 @@ const upload = multer({
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
-  await setupAuth(app);
+  setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
+  // User profile route is already handled in auth.ts
 
   // Livestock routes
   app.get("/api/livestock", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const livestock = await storage.getLivestock(userId);
       res.json(livestock);
     } catch (error) {
@@ -68,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/livestock/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       const animal = await storage.getLivestockById(id, userId);
       
@@ -85,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/livestock", isAuthenticated, upload.single("photo"), async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertLivestockSchema.parse({
         ...req.body,
         userId,
@@ -115,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/livestock/:id", isAuthenticated, upload.single("photo"), async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       
       const updateData = {
@@ -143,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/livestock/:id", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       
       const success = await storage.deleteLivestock(id, userId);
@@ -177,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const record = await storage.createHealthRecord(validatedData);
       
       // Log activity
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       await storage.createActivityLog({
         userId,
         livestockId: validatedData.livestockId,
@@ -199,7 +192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Medicine reminders routes
   app.get("/api/medicine-reminders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const reminders = await storage.getMedicineReminders(userId);
       res.json(reminders);
     } catch (error) {
@@ -210,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/medicine-reminders/overdue", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const reminders = await storage.getOverdueMedicineReminders(userId);
       res.json(reminders);
     } catch (error) {
@@ -258,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Vaccination reminders routes
   app.get("/api/vaccination-reminders", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const reminders = await storage.getVaccinationReminders(userId);
       res.json(reminders);
     } catch (error) {
@@ -269,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/vaccination-reminders/overdue", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const reminders = await storage.getOverdueVaccinationReminders(userId);
       res.json(reminders);
     } catch (error) {
@@ -363,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/forum/posts", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertForumPostSchema.parse({
         ...req.body,
         userId,
@@ -394,7 +387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/forum/posts/:id/replies", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { id } = req.params;
       
       const validatedData = insertForumReplySchema.parse({
@@ -418,7 +411,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity logs routes
   app.get("/api/activity-logs", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const { limit } = req.query;
       const logs = await storage.getActivityLogs(userId, limit ? parseInt(limit as string) : 10);
       res.json(logs);
@@ -431,12 +424,123 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard metrics routes
   app.get("/api/dashboard/metrics", isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const metrics = await storage.getDashboardMetrics(userId);
       res.json(metrics);
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
       res.status(500).json({ message: "Failed to fetch dashboard metrics" });
+    }
+  });
+
+  // Chatbot routes
+  app.get("/api/chatbot/conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const conversations = await storage.getChatbotConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post("/api/chatbot/conversations", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { title } = req.body;
+      
+      const validatedData = insertChatbotConversationSchema.parse({
+        userId,
+        title: title || "New Conversation",
+      });
+      
+      const conversation = await storage.createChatbotConversation(validatedData);
+      res.status(201).json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get("/api/chatbot/conversations/:id/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      
+      // Verify user owns the conversation
+      const conversation = await storage.getChatbotConversation(id, userId);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      const messages = await storage.getChatbotMessages(id);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/chatbot/conversations/:id/messages", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { id } = req.params;
+      const { content } = req.body;
+      
+      if (!content?.trim()) {
+        return res.status(400).json({ message: "Message content is required" });
+      }
+      
+      // Verify user owns the conversation
+      const conversation = await storage.getChatbotConversation(id, userId);
+      if (!conversation) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      // Save user message
+      const userMessage = await storage.createChatbotMessage({
+        conversationId: id,
+        role: "user",
+        content: content.trim(),
+      });
+      
+      // Get conversation history for context
+      const messages = await storage.getChatbotMessages(id);
+      
+      // Prepare messages for OpenAI (exclude the just-added user message from history)
+      const systemPrompt = createSystemPrompt();
+      const conversationHistory = messages
+        .slice(0, -1) // Remove the current message
+        .slice(-10) // Keep last 10 messages for context
+        .map(msg => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content,
+        }));
+      
+      const openaiMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...conversationHistory,
+        { role: "user" as const, content: content.trim() },
+      ];
+      
+      // Get AI response
+      const aiResponse = await createChatCompletion(openaiMessages);
+      
+      // Save AI message
+      const assistantMessage = await storage.createChatbotMessage({
+        conversationId: id,
+        role: "assistant",
+        content: aiResponse,
+      });
+      
+      res.json({
+        userMessage,
+        assistantMessage,
+      });
+    } catch (error) {
+      console.error("Error processing chat message:", error);
+      res.status(500).json({ message: "Failed to process message" });
     }
   });
 

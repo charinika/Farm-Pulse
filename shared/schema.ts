@@ -26,12 +26,13 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (required for Replit Auth)
+// User storage table with email/password authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  password: varchar("password", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
   profileImageUrl: varchar("profile_image_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -155,12 +156,31 @@ export const activityLogs = pgTable("activity_logs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Chatbot conversations table
+export const chatbotConversations = pgTable("chatbot_conversations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Chatbot messages table
+export const chatbotMessages = pgTable("chatbot_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  conversationId: varchar("conversation_id").notNull().references(() => chatbotConversations.id, { onDelete: "cascade" }),
+  role: varchar("role").notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   livestock: many(livestock),
   forumPosts: many(forumPosts),
   forumReplies: many(forumReplies),
   activityLogs: many(activityLogs),
+  chatbotConversations: many(chatbotConversations),
 }));
 
 export const livestockRelations = relations(livestock, ({ one, many }) => ({
@@ -225,11 +245,37 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const chatbotConversationsRelations = relations(chatbotConversations, ({ one, many }) => ({
+  user: one(users, {
+    fields: [chatbotConversations.userId],
+    references: [users.id],
+  }),
+  messages: many(chatbotMessages),
+}));
+
+export const chatbotMessagesRelations = relations(chatbotMessages, ({ one }) => ({
+  conversation: one(chatbotConversations, {
+    fields: [chatbotMessages.conversationId],
+    references: [chatbotConversations.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertChatbotConversationSchema = createInsertSchema(chatbotConversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertChatbotMessageSchema = createInsertSchema(chatbotMessages).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertLivestockSchema = createInsertSchema(livestock).omit({
@@ -279,7 +325,7 @@ export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertLivestock = z.infer<typeof insertLivestockSchema>;
 export type Livestock = typeof livestock.$inferSelect;
@@ -296,3 +342,7 @@ export type InsertForumReply = z.infer<typeof insertForumReplySchema>;
 export type ForumReply = typeof forumReplies.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertChatbotConversation = z.infer<typeof insertChatbotConversationSchema>;
+export type ChatbotConversation = typeof chatbotConversations.$inferSelect;
+export type InsertChatbotMessage = z.infer<typeof insertChatbotMessageSchema>;
+export type ChatbotMessage = typeof chatbotMessages.$inferSelect;
