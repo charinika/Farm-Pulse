@@ -4,9 +4,15 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { User as SelectUser, InsertUser } from "@shared/schema";
+import { users, InsertUser } from "@shared/schema";
+import { InferModel } from "drizzle-orm";
+
+type SelectUser = InferModel<typeof users, "select">;
+
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+
+type LoginData = Pick<InsertUser, "username" | "password">;
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -15,15 +21,14 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  logout: () => void; // ✅ Added logout function
 };
-
-type LoginData = Pick<InsertUser, "email" | "password">;
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  
+
   const {
     data: user,
     error,
@@ -62,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Welcome to FarmCare Pro!",
+        title: "Welcome to Farm Pulse!",
         description: "Your account has been created successfully.",
       });
     },
@@ -96,6 +101,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // ✅ Wrapper to expose logout() function
+  const logout = () => logoutMutation.mutate();
+
   return (
     <AuthContext.Provider
       value={{
@@ -105,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        logout, // ✅ Added here
       }}
     >
       {children}

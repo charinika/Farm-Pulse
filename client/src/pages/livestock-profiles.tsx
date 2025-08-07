@@ -1,173 +1,195 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import LivestockCard from "@/components/livestock/livestock-card";
+import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+import ViewProfileModal from "@/components/livestock/ViewProfileModal";
+import TrackProductivityModal from "@/components/livestock/TrackProductivityModal";
+import ViewProductivityModal from "@/components/livestock/ViewProductivityModal";
 import AddAnimalModal from "@/components/livestock/add-animal-modal";
-import { Plus, Search } from "lucide-react";
+import { LivestockCard } from "@/components/livestock/livestock-card";
+import { Button } from "@/components/ui/button";
+
+// Types
+interface Animal {
+  id: number;
+  name: string;
+  age: number;
+  breed: string;
+  description: string;
+  animalType: string;
+  gender: string;
+  weight: number;
+  image?: string;
+}
+
+interface ProductivityEntry {
+  animalId: number;
+  date: string;
+  type: string;
+  quantity: number;
+  notes?: string;
+}
 
 export default function LivestockProfiles() {
-  const { toast } = useToast();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [speciesFilter, setSpeciesFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [animals, setAnimals] = useState<Animal[]>([]);
+  const [selectedAnimal, setSelectedAnimal] = useState<Animal | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showTrackModal, setShowTrackModal] = useState(false);
+  const [showViewProductivity, setShowViewProductivity] = useState(false);
+  const [productivity, setProductivity] = useState<ProductivityEntry[]>([]);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [filterType, setFilterType] = useState("all");
+  const [filterGender, setFilterGender] = useState("all");
 
-  const { data: livestock, isLoading } = useQuery({
-    queryKey: ["/api/livestock"],
-  });
-
-  const safeLivestock = livestock || [];
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/livestock/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/livestock"] });
-      toast({
-        title: "Success",
-        description: "Animal deleted successfully",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete animal",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const filteredLivestock = safeLivestock.filter((animal: any) => {
-    const matchesSearch = animal.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         animal.breed?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         animal.tagNumber?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSpecies = speciesFilter === "all" || animal.species === speciesFilter;
-    const matchesStatus = statusFilter === "all" || animal.status === statusFilter;
-    
-    return matchesSearch && matchesSpecies && matchesStatus;
-  });
-
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this animal?")) {
-      deleteMutation.mutate(id);
+  useEffect(() => {
+    const stored = localStorage.getItem("livestock");
+    if (stored) {
+      setAnimals(JSON.parse(stored));
     }
+    const prod = localStorage.getItem("productivity");
+    if (prod) {
+      setProductivity(JSON.parse(prod));
+    }
+  }, []);
+
+  const handleSaveProductivity = (data: {
+    date: string;
+    type: string;
+    quantity: number;
+    notes?: string;
+  }) => {
+    if (!selectedAnimal) return;
+    const newRecord = {
+      animalId: selectedAnimal.id,
+      ...data,
+    };
+    const updated = [...productivity, newRecord];
+    setProductivity(updated);
+    localStorage.setItem("productivity", JSON.stringify(updated));
   };
 
-  if (isLoading) {
+  const filteredAnimals = animals.filter((a) => {
     return (
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="space-y-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Livestock Profiles</h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-4 animate-pulse">
-                <div className="w-full h-32 bg-gray-200 rounded-md mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded mb-1"></div>
-                <div className="h-3 bg-gray-200 rounded"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
+      (filterType === "all" || a.animalType === filterType) &&
+      (filterGender === "all" || a.gender === filterGender)
     );
-  }
+  });
 
   return (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Livestock Profiles</h1>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Animal
+    <div className="p-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Livestock Profiles</h1>
+        <div className="flex gap-4 items-center">
+          <Select onValueChange={setFilterType}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filter by Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="Cow">Cow</SelectItem>
+              <SelectItem value="Sheep">Sheep</SelectItem>
+              <SelectItem value="Goat">Goat</SelectItem>
+              <SelectItem value="Buffalo">Buffalo</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select onValueChange={setFilterGender}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Filter by Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Genders</SelectItem>
+              <SelectItem value="Male">Male</SelectItem>
+              <SelectItem value="Female">Female</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => setAddModalOpen(true)}
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-full"
+          >
+            <Plus className="mr-2 h-5 w-5" /> Add Animal
           </Button>
         </div>
-
-        {/* Search and Filter */}
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search animals..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={speciesFilter} onValueChange={setSpeciesFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Species" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Species</SelectItem>
-              <SelectItem value="cattle">Cattle</SelectItem>
-              <SelectItem value="sheep">Sheep</SelectItem>
-              <SelectItem value="goat">Goat</SelectItem>
-              <SelectItem value="pig">Pig</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="healthy">Healthy</SelectItem>
-              <SelectItem value="treatment">Treatment</SelectItem>
-              <SelectItem value="monitoring">Monitoring</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Animal Cards Grid */}
-        {filteredLivestock.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredLivestock.map((animal: any) => (
-              <LivestockCard
-                key={animal.id}
-                animal={animal}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-500 mb-4">
-              {livestock?.length === 0 ? (
-                <>
-                  <div className="text-6xl mb-4">🐄</div>
-                  <h3 className="text-lg font-medium mb-2">No animals yet</h3>
-                  <p className="mb-4">Start by adding your first animal to the farm.</p>
-                  <Button onClick={() => setIsAddModalOpen(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add First Animal
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <div className="text-4xl mb-4">🔍</div>
-                  <h3 className="text-lg font-medium mb-2">No animals found</h3>
-                  <p>Try adjusting your search or filters.</p>
-                </>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Add Animal Modal */}
+      {filteredAnimals.length === 0 ? (
+        <p className="text-gray-500 text-center">No animals match the selected filters.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {filteredAnimals.map((animal) => (
+            <LivestockCard
+              key={animal.id}
+              animal={{
+                id: animal.id.toString(),
+                name: animal.name,
+                breed: animal.breed,
+                age: animal.age,
+                type: animal.animalType,
+                gender: animal.gender,
+                weight: animal.weight.toString(),
+                image: animal.image,
+              }}
+              onViewProfile={() => {
+                setSelectedAnimal(animal);
+                setShowProfile(true);
+              }}
+              onTrackProductivity={() => {
+                setSelectedAnimal(animal);
+                setShowTrackModal(true);
+              }}
+              onViewProductivity={() => {
+                setSelectedAnimal(animal);
+                setShowViewProductivity(true);
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Modals */}
+      {selectedAnimal && (
+        <>
+          <ViewProfileModal
+            open={showProfile}
+            onClose={() => setShowProfile(false)}
+            animal={selectedAnimal}
+          />
+          <TrackProductivityModal
+            open={showTrackModal}
+            onClose={() => setShowTrackModal(false)}
+            onSave={handleSaveProductivity}
+            animal={{
+              id: selectedAnimal.id,
+              type: selectedAnimal.animalType,
+            }}
+          />
+          <ViewProductivityModal
+                    open={showViewProductivity}
+                    onClose={() => setShowViewProductivity(false)}
+                    animal={{
+                      id: selectedAnimal.id,
+                      name: selectedAnimal.name,
+                      type: selectedAnimal.animalType,
+                    }}
+/>
+
+        </>
+      )}
+
       <AddAnimalModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        isOpen={addModalOpen}
+        onClose={() => {
+          setAddModalOpen(false);
+          const updated = localStorage.getItem("livestock");
+          if (updated) setAnimals(JSON.parse(updated));
+        }}
       />
-    </main>
+    </div>
   );
 }

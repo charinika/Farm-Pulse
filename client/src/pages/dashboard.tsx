@@ -1,212 +1,168 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { isUnauthorizedError } from "@/lib/authUtils";
-import MetricsCard from "@/components/dashboard/metrics-card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import HealthChart from "@/components/dashboard/health-chart";
 import RecentActivity from "@/components/dashboard/recent-activity";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
-import { Users, Heart, Clock, DollarSign } from "lucide-react";
+import { Bell, Stethoscope, Syringe, TrendingUp, Users } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { activityLogs } from "@shared/schema";
+import type { InferSelectModel } from "drizzle-orm";
+
+// ✅ Infer the ActivityLog type from the schema
+type ActivityLog = InferSelectModel<typeof activityLogs>;
+
+// Define other types
+type Metrics = {
+  totalLivestock: number;
+  healthyAnimals: number;
+  pendingReminders: number;
+  monthlyExpenses: number;
+};
+
+type Reminder = {
+  id: string;
+  medicineName: string;
+  nextDueDate: string;
+};
 
 export default function Dashboard() {
-  const { toast } = useToast();
-
-  const { data: metrics, isLoading: isLoadingMetrics, error: metricsError } = useQuery({
+  // Metrics Query
+  const {
+    data: metrics,
+    isLoading: isLoadingMetrics,
+    error: metricsError,
+  } = useQuery<Metrics>({
     queryKey: ["/api/dashboard/metrics"],
   });
 
-  const { data: activityLogs, isLoading: isLoadingActivity, error: activityError } = useQuery({
+  // Activity Logs Query
+  const {
+    data: activityLogsData,
+    isLoading: isLoadingActivity,
+    error: activityError,
+  } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
   });
 
-  const { data: overdueReminders, error: remindersError } = useQuery({
+  // Overdue Reminders Query
+  const {
+    data: overdueReminders,
+    error: remindersError,
+  } = useQuery<Reminder[]>({
     queryKey: ["/api/medicine-reminders/overdue"],
   });
 
-  // Default values for type safety
-  const safeMetrics = metrics || { totalLivestock: 0, healthyAnimals: 0, pendingReminders: 0, monthlyExpenses: 0 };
-  const safeActivityLogs = activityLogs || [];
-  const safeOverdueReminders = overdueReminders || [];
+  const safeMetrics: Metrics = metrics ?? {
+    totalLivestock: 0,
+    healthyAnimals: 0,
+    pendingReminders: 0,
+    monthlyExpenses: 0,
+  };
 
-  // Handle unauthorized errors
-  useEffect(() => {
-    const errors = [metricsError, activityError, remindersError].filter(Boolean);
-    for (const error of errors) {
-      if (error && isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
-    }
-  }, [metricsError, activityError, remindersError, toast]);
-
-  if (isLoadingMetrics) {
-    return (
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="space-y-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Farm Dashboard</h1>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white p-5 rounded-lg shadow-sm animate-pulse">
-                <div className="h-16 bg-gray-200 rounded"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </main>
-    );
-  }
+  const safeActivityLogs: ActivityLog[] = activityLogsData ?? [];
+  const safeOverdueReminders: Reminder[] = overdueReminders ?? [];
 
   return (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Farm Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            {/* Weather Widget */}
-            <div className="flex items-center px-3 py-1 bg-blue-50 rounded-lg">
-              <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
-              </svg>
-              <span className="text-sm text-blue-700">22°C Partly Cloudy</span>
-            </div>
-          </div>
-        </div>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold">Dashboard Overview</h1>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricsCard
-            title="Total Livestock"
-            value={safeMetrics.totalLivestock}
-            icon={Users}
-            color="primary"
-          />
-          <MetricsCard
-            title="Healthy Animals"
-            value={safeMetrics.healthyAnimals}
-            icon={Heart}
-            color="success"
-          />
-          <MetricsCard
-            title="Pending Reminders"
-            value={safeMetrics.pendingReminders}
-            icon={Clock}
-            color="accent"
-          />
-          <MetricsCard
-            title="Monthly Expenses"
-            value={`$${safeMetrics.monthlyExpenses}`}
-            icon={DollarSign}
-            color="secondary"
-          />
-        </div>
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Livestock</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingMetrics ? (
+              <Skeleton className="h-6 w-10" />
+            ) : (
+              <div className="text-2xl font-bold">{safeMetrics.totalLivestock}</div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Charts and Recent Activity Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Health Status Chart */}
-          <div className="lg:col-span-2">
-            <HealthChart metrics={safeMetrics} />
-          </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Healthy Animals</CardTitle>
+            <Stethoscope className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingMetrics ? (
+              <Skeleton className="h-6 w-10" />
+            ) : (
+              <div className="text-2xl font-bold">{safeMetrics.healthyAnimals}</div>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Recent Activity */}
-          <div>
-            <RecentActivity
-              activities={safeActivityLogs}
-              isLoading={isLoadingActivity}
-            />
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Reminders</CardTitle>
+            <Bell className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingMetrics ? (
+              <Skeleton className="h-6 w-10" />
+            ) : (
+              <div className="text-2xl font-bold">{safeMetrics.pendingReminders}</div>
+            )}
+          </CardContent>
+        </Card>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Urgent Reminders */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium text-gray-900 flex items-center">
-                <Clock className="w-5 h-5 text-destructive mr-2" />
-                Urgent Reminders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {safeOverdueReminders.length > 0 ? (
-                <div className="space-y-3">
-                  {safeOverdueReminders.slice(0, 3).map((reminder: any) => (
-                    <div key={reminder.id} className="flex items-center p-3 bg-red-50 rounded-lg border-l-4 border-destructive">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {reminder.medicineName}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Due: {new Date(reminder.nextDueDate).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Button size="sm" variant="destructive">
-                        Mark Done
-                      </Button>
-                    </div>
-                  ))}
-                  {overdueReminders.length > 3 && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link href="/reminders">View All Reminders</Link>
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Heart className="w-12 h-12 text-success mx-auto mb-3" />
-                  <p className="text-gray-500">All reminders are up to date!</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium text-gray-900">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button className="w-full justify-start" asChild>
-                  <Link href="/livestock">
-                    <Users className="w-4 h-4 mr-2" />
-                    Add New Animal
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/health-records">
-                    <Heart className="w-4 h-4 mr-2" />
-                    Record Health Event
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/reminders">
-                    <Clock className="w-4 h-4 mr-2" />
-                    Set Reminder
-                  </Link>
-                </Button>
-                <Button variant="outline" className="w-full justify-start" asChild>
-                  <Link href="/disease-diagnosis">
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                    </svg>
-                    Disease Diagnosis
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {isLoadingMetrics ? (
+              <Skeleton className="h-6 w-10" />
+            ) : (
+              <div className="text-2xl font-bold">₹{safeMetrics.monthlyExpenses}</div>
+            )}
+          </CardContent>
+        </Card>
       </div>
-    </main>
+
+      {/* Charts and Activities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <HealthChart metrics={safeMetrics} />
+        <RecentActivity activities={safeActivityLogs} isLoading={isLoadingActivity} />
+      </div>
+
+      {/* Overdue Reminders */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-4">Overdue Medicine Reminders</h2>
+        {safeOverdueReminders.length === 0 ? (
+          <p className="text-muted-foreground">No overdue reminders 🎉</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {safeOverdueReminders.slice(0, 3).map((reminder: Reminder) => (
+              <Card key={reminder.id}>
+                <CardHeader>
+                  <CardTitle className="text-base">{reminder.medicineName}</CardTitle>
+                  <CardDescription>
+                    Due on:{" "}
+                    <span className="font-medium text-red-600">{reminder.nextDueDate}</span>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Syringe className="h-4 w-4 mr-2" />
+                    Medicine Reminder
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

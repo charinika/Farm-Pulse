@@ -1,0 +1,172 @@
+{
+  "Actinomycosis": {
+    "treatment": [
+      "Administer sodium iodide intravenously weekly.",
+      "Use antibiotics like penicillin for extended periods.",
+      "Surgical drainage in severe jaw swelling cases."
+    ],
+    "firstAid": [
+      "Isolate infected animal to avoid contamination.",
+      "Apply antiseptic to external lesions if present.",
+      "Ensure animal is able to eat and drink properly."
+    ],
+    "prevention": [
+      "Avoid feeding rough or thorny feed.",
+      "Maintain oral hygiene and inspect for injuries.",
+      "Prompt treatment of any oral wounds or abscesses."
+    ]
+  },
+  "Anthrax": {
+    "treatment": [
+      "Early use of high doses of penicillin or oxytetracycline.",
+      "Supportive care like fluids and anti-inflammatory drugs.",
+      "Report outbreak to veterinary and government authorities."
+    ],
+    "firstAid": [
+      "Isolate infected animals immediately.",
+      "Avoid opening carcasses (can spread spores).",
+      "Disinfect area and notify authorities promptly."
+    ],
+    "prevention": [
+      "Vaccinate annually in endemic areas.",
+      "Proper disposal (burn/bury) of dead animals.",
+      "Avoid grazing in known contaminated areas."
+    ]
+  },
+  "BovinePapillomatosis": {
+    "treatment": [
+      "Autogenous vaccination using crushed warts.",
+      "Topical salicylic acid or surgical removal in severe cases.",
+      "Boost immune response with vitamin and mineral supplements."
+    ],
+    "firstAid": [
+      "Keep affected area clean and dry.",
+      "Prevent self-trauma to avoid bleeding or infection.",
+      "Monitor for spread and isolate if necessary."
+    ],
+    "prevention": [
+      "Maintain hygiene to prevent spread of virus.",
+      "Disinfect tools used for treatment or dehorning.",
+      "Improve nutrition to support immunity."
+    ]
+  },
+  "Brucellosis": {
+    "treatment": [
+      "No effective treatment — infected animals are often culled.",
+      "Long-term antibiotics not recommended for livestock.",
+      "Notify veterinary authorities immediately."
+    ],
+    "firstAid": [
+      "Isolate affected animal immediately.",
+      "Avoid contact with aborted fetus or discharges.",
+      "Practice strict hygiene and sanitation."
+    ],
+    "prevention": [
+      "Vaccinate young females (e.g., RB51 or S19 vaccines).",
+      "Avoid buying animals without testing history.",
+      "Test and cull positive reactors regularly."
+    ]
+  },
+  "Footrot": {
+    "treatment": [
+      "Trim affected hooves and clean thoroughly.",
+      "Apply antiseptic solutions like zinc sulfate.",
+      "Administer antibiotics (e.g., oxytetracycline)."
+    ],
+    "firstAid": [
+      "Clean and dry affected foot.",
+      "Isolate affected animal from wet areas.",
+      "Use foot baths containing copper sulfate."
+    ],
+    "prevention": [
+      "Maintain dry, clean flooring in shelters.",
+      "Regular hoof trimming and inspection.",
+      "Footbathing herd periodically with disinfectant."
+    ]
+  },
+  "LumpySkinDisease": {
+    "treatment": [
+      "No specific treatment — supportive therapy only.",
+      "Antibiotics to prevent secondary infections.",
+      "Anti-inflammatory drugs to reduce pain and fever."
+    ],
+    "firstAid": [
+      "Isolate infected animals immediately.",
+      "Apply antiseptic to skin nodules.",
+      "Keep flies and insects away from wounds."
+    ],
+    "prevention": [
+      "Vaccinate with live attenuated LSD vaccine.",
+      "Control insect vectors like mosquitoes and ticks.",
+      "Quarantine new or suspected animals."
+    ]
+  },
+  "Mastitis": {
+    "treatment": [
+      "Intramammary infusion of antibiotics.",
+      "Systemic antibiotics for severe cases.",
+      "Anti-inflammatory medications to reduce swelling."
+    ],
+    "firstAid": [
+      "Milk affected quarter frequently to reduce pressure.",
+      "Apply cold compress to the udder to reduce pain.",
+      "Keep udder clean and dry."
+    ],
+    "prevention": [
+      "Maintain milking hygiene (clean hands, equipment).",
+      "Dry cow therapy during non-lactating period.",
+      "Regular udder checks and prompt treatment of signs."
+    ]
+  },
+  "Pinkeye": {
+    "treatment": [
+      "Topical or injectable antibiotics (e.g., oxytetracycline).",
+      "Eye patches to reduce irritation and promote healing.",
+      "Anti-inflammatory drugs for pain relief."
+    ],
+    "firstAid": [
+      "Clean the eye gently with sterile saline.",
+      "Apply antibiotic eye ointment or drops.",
+      "Avoid direct sunlight and dust exposure."
+    ],
+    "prevention": [
+      "Fly control through sprays or traps.",
+      "Avoid overcrowding and dusty environments.",
+      "Vaccinate if available in the region."
+    ]
+  },
+  "Ringworm": {
+    "treatment": [
+      "Topical antifungals like miconazole or iodine solutions.",
+      "Systemic antifungal medications in severe cases.",
+      "Improve nutrition to boost immunity."
+    ],
+    "firstAid": [
+      "Isolate infected animal to prevent spread.",
+      "Shave hair around lesions and keep area dry.",
+      "Apply antifungal solution daily."
+    ],
+    "prevention": [
+      "Disinfect housing, equipment, and grooming tools.",
+      "Avoid overcrowding and damp conditions.",
+      "Provide adequate sunlight and ventilation."
+    ]
+  },
+  "TickInfestation": {
+    "treatment": [
+      "Use acaricides like deltamethrin or ivermectin.",
+      "Spray or dip animals at regular intervals.",
+      "Treat entire herd, not just visibly affected ones."
+    ],
+    "firstAid": [
+      "Manually remove visible ticks with tweezers.",
+      "Clean the bitten area with antiseptic.",
+      "Provide nutritional support to reduce stress."
+    ],
+    "prevention": [
+      "Regular tick control program with acaricides.",
+      "Maintain cleanliness of animal housing.",
+      "Rotate pastures to break tick life cycle."
+    ]
+  }
+}

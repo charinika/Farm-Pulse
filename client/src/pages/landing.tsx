@@ -10,7 +10,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary">🚜 FarmCare Pro</h1>
+              <h1 className="text-2xl font-bold text-primary">Farm Pulse</h1>
             </div>
             <Button asChild>
               <a href="/api/login">Sign In</a>
@@ -96,7 +96,7 @@ export default function Landing() {
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Farm Management?</h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of farmers who trust FarmCare Pro for their livestock health management.
+            Join thousands of farmers who trust Farm Pulse for their livestock health management.
           </p>
           <Button size="lg" variant="secondary" asChild>
             <a href="/api/login">Start Free Trial</a>

@@ -1,285 +1,272 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, AlertTriangle, Shield, Activity, Info } from "lucide-react";
+import { useState, useRef } from "react";
+import jsPDF from "jspdf";
+import {
+  Input,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Button,
+} from "@/components/ui";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Search,
+  Trash2,
+  Loader2,
+  UploadCloud,
+  Download,
+  Moon,
+  Sun,
+} from "lucide-react";
+
+interface PredictionResult {
+  prediction?: string;
+  treatment?: string;
+  firstAid?: string;
+  prevention?: string;
+  file: File;
+  error?: boolean;
+  message?: string;
+}
 
 export default function DiseaseDiagnosis() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [predictions, setPredictions] = useState<PredictionResult[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [selectedToClear, setSelectedToClear] = useState<Set<number>>(new Set());
 
-  const { data: diseases, isLoading } = useQuery({
-    queryKey: ["/api/diseases", searchQuery],
-    queryFn: async () => {
-      const url = searchQuery 
-        ? `/api/diseases?search=${encodeURIComponent(searchQuery)}`
-        : "/api/diseases";
-      
-      const response = await fetch(url, {
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch diseases");
-      }
-      
-      return response.json();
-    },
-  });
+  const dropRef = useRef<HTMLDivElement>(null);
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case "high":
-        return "bg-destructive text-destructive-foreground";
-      case "medium":
-        return "bg-accent text-accent-foreground";
-      case "low":
-        return "bg-success text-success-foreground";
-      default:
-        return "bg-gray-500 text-white";
-    }
+  const toggleTheme = () => setDarkMode(!darkMode);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedImages(prev => [...prev, ...files]);
+    setPredictions([]);
   };
 
-  const getSeverityIcon = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case "high":
-        return <AlertTriangle className="w-4 h-4" />;
-      case "medium":
-        return <Activity className="w-4 h-4" />;
-      case "low":
-        return <Shield className="w-4 h-4" />;
-      default:
-        return <Info className="w-4 h-4" />;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="space-y-6">
-          <h1 className="text-2xl font-semibold text-gray-900">Disease Diagnosis</h1>
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="h-6 bg-gray-200 rounded w-1/3"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </main>
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(file =>
+      file.type.startsWith("image/")
     );
-  }
+    setSelectedImages(prev => [...prev, ...files]);
+    setPredictions([]);
+  };
+
+  const handleImageUpload = async () => {
+    if (selectedImages.length === 0) return;
+    setUploading(true);
+    const results: PredictionResult[] = [];
+
+    for (const image of selectedImages) {
+      const formData = new FormData();
+      formData.append("file", image);
+
+      try {
+        const res = await fetch("/api/diagnosis/diagnose-image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Prediction failed");
+        const data = await res.json();
+        results.push({ ...data, file: image });
+      } catch {
+        results.push({ error: true, message: "Failed to analyze", file: image });
+      }
+    }
+
+    setPredictions(results);
+    setUploading(false);
+  };
+
+  const handleClearSelected = () => {
+    setSelectedImages(prev => prev.filter((_, idx) => !selectedToClear.has(idx)));
+    setPredictions(prev => prev.filter((_, idx) => !selectedToClear.has(idx)));
+    setSelectedToClear(new Set());
+  };
+
+  const handleClearAll = () => {
+    setSelectedImages([]);
+    setPredictions([]);
+    setSelectedToClear(new Set());
+  };
+
+  const toggleCheckbox = (index: number) => {
+    setSelectedToClear(prev => {
+      const updated = new Set(prev);
+      updated.has(index) ? updated.delete(index) : updated.add(index);
+      return updated;
+    });
+  };
+
+  const downloadPDF = (result: PredictionResult, index: number) => {
+    const doc = new jsPDF();
+    doc.setFontSize(18).text("Farm Pulse AI Disease Diagnosis", 10, 20);
+    doc.setFontSize(12).text(`Prediction Report #${index + 1}`, 10, 30);
+    doc.text(`File: ${result.file?.name || "Unknown"}`, 10, 40);
+
+    if (result.error) {
+      doc.setTextColor(200, 0, 0).text(`❌ ${result.message}`, 10, 50);
+    } else {
+      doc.setTextColor(0, 0, 0);
+      doc.text(`✅ Prediction: ${result.prediction}`, 10, 50);
+      doc.text(`💊 Treatment: ${result.treatment || "N/A"}`, 10, 60);
+      doc.text(`🧯 First Aid: ${result.firstAid || "N/A"}`, 10, 70);
+      doc.text(`🛡️ Prevention: ${result.prevention || "N/A"}`, 10, 80);
+    }
+
+    doc.save(`prediction-${index + 1}.pdf`);
+  };
 
   return (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8">
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Disease Diagnosis</h1>
-          <p className="text-gray-600 mt-2">
-            Search for diseases, symptoms, and treatment information to help diagnose and treat your livestock.
-          </p>
+    <div
+      className={`relative p-6 min-h-screen max-w-6xl mx-auto transition-colors ${
+        darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
+      }`}
+    >
+      <div className="relative z-10">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-3xl font-bold text-center text-green-700 w-full">
+            🐄 AI-Powered Livestock Disease Diagnosis
+          </h2>
+          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+            {darkMode ? <Sun /> : <Moon />}
+          </Button>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div
+          ref={dropRef}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          className={`border-dashed border-2 p-8 rounded-xl text-center cursor-pointer transition-all duration-300 shadow-md ${
+            isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-green-400"
+          }`}
+          onClick={() => dropRef.current?.querySelector("input")?.click()}
+        >
+          <UploadCloud className="mx-auto mb-3 text-green-600" size={40} />
+          <p className="mb-2 font-medium">Drag & drop images here or click to browse</p>
           <Input
-            placeholder="Search diseases or symptoms..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
           />
         </div>
 
-        {/* AI Diagnosis Disclaimer */}
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div>
-                <h3 className="font-medium text-amber-800">Important Disclaimer</h3>
-                <p className="text-sm text-amber-700 mt-1">
-                  This information is for educational purposes only and should not replace professional veterinary diagnosis. 
-                  Always consult with a qualified veterinarian for accurate diagnosis and treatment of your animals.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Disease Information */}
-        {diseases && diseases.length > 0 ? (
-          <div className="space-y-4">
-            {diseases.map((disease: any) => (
-              <Card key={disease.id} className="hover-lift">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl">{disease.name}</CardTitle>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Badge className={getSeverityColor(disease.severity)}>
-                          {getSeverityIcon(disease.severity)}
-                          <span className="ml-1">{disease.severity} Risk</span>
-                        </Badge>
-                        {disease.contagious && (
-                          <Badge variant="destructive">
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            Contagious
-                          </Badge>
-                        )}
-                        <div className="flex flex-wrap gap-1">
-                          {disease.species?.map((spec: string) => (
-                            <Badge key={spec} variant="outline" className="text-xs">
-                              {spec}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+        {selectedImages.length > 0 && (
+          <>
+            <div className="flex flex-wrap gap-4 mt-6 justify-center">
+              {selectedImages.map((img, idx) => (
+                <div key={idx} className="relative group">
+                  <img
+                    src={URL.createObjectURL(img)}
+                    alt={`preview-${idx}`}
+                    className="w-32 h-32 object-cover rounded-lg border shadow hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute top-1 left-1">
+                    <Checkbox
+                      checked={selectedToClear.has(idx)}
+                      onCheckedChange={() => toggleCheckbox(idx)}
+                    />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="symptoms">
-                      <AccordionTrigger className="text-left">
-                        <div className="flex items-center">
-                          <Activity className="w-4 h-4 mr-2 text-primary" />
-                          Symptoms
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <ul className="list-disc list-inside space-y-1">
-                          {disease.symptoms?.map((symptom: string, index: number) => (
-                            <li key={index} className="text-gray-700">{symptom}</li>
-                          ))}
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex gap-3 justify-center">
+              <Button
+                onClick={handleImageUpload}
+                disabled={uploading}
+                className="flex items-center px-5"
+              >
+                {uploading ? <Loader2 className="animate-spin mr-2" /> : <Search className="mr-2" />}
+                Diagnose
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleClearSelected}
+                className="flex items-center px-5"
+              >
+                <Trash2 className="mr-2" />
+                Clear Selected
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleClearAll}
+                className="flex items-center px-5"
+              >
+                <Trash2 className="mr-2" />
+                Clear All
+              </Button>
+            </div>
+          </>
+        )}
 
-                    <AccordionItem value="treatment">
-                      <AccordionTrigger className="text-left">
-                        <div className="flex items-center">
-                          <Shield className="w-4 h-4 mr-2 text-success" />
-                          Treatment
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="prose prose-sm max-w-none">
-                          <p className="text-gray-700 whitespace-pre-wrap">{disease.treatment}</p>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    <AccordionItem value="prevention">
-                      <AccordionTrigger className="text-left">
-                        <div className="flex items-center">
-                          <Shield className="w-4 h-4 mr-2 text-secondary" />
-                          Prevention
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="prose prose-sm max-w-none">
-                          <p className="text-gray-700 whitespace-pre-wrap">{disease.prevention}</p>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-
-                    {disease.emergencyProtocol && (
-                      <AccordionItem value="emergency">
-                        <AccordionTrigger className="text-left">
-                          <div className="flex items-center">
-                            <AlertTriangle className="w-4 h-4 mr-2 text-destructive" />
-                            Emergency Protocol
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="prose prose-sm max-w-none">
-                            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                              <p className="text-red-800 whitespace-pre-wrap">{disease.emergencyProtocol}</p>
-                            </div>
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    )}
-                  </Accordion>
-
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500">
-                        Always consult with a veterinarian for proper diagnosis and treatment.
-                      </p>
-                      <Button variant="outline" size="sm">
-                        Contact Vet
+        <div className="mt-10 space-y-6">
+          {predictions.map((result, index) => (
+            <Card key={index} className="border border-green-300 rounded-xl shadow-md p-6">
+              <div className="flex flex-col md:flex-row items-start gap-6">
+                <img
+                  src={URL.createObjectURL(result.file)}
+                  alt={`predicted-${index}`}
+                  className="w-40 h-40 object-cover rounded-md border shadow"
+                />
+                <div className="flex-1 space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl font-semibold text-green-800">
+                        Prediction #{index + 1}: {result.file?.name}
+                      </h3>
+                      {result.error ? (
+                        <p className="text-red-600 mt-1 font-medium">❌ {result.message}</p>
+                      ) : (
+                        <p className="mt-1">✅ Disease: <strong>{result.prediction}</strong></p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox checked={selectedToClear.has(index)} onCheckedChange={() => toggleCheckbox(index)} />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadPDF(result, index)}
+                        className="text-xs"
+                      >
+                        <Download className="mr-1 h-4 w-4" /> Download
                       </Button>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : searchQuery ? (
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium mb-2">No diseases found</h3>
-            <p className="text-gray-500">Try searching with different keywords or symptoms.</p>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔬</div>
-            <h3 className="text-lg font-medium mb-2">Disease Database</h3>
-            <p className="text-gray-500 mb-4">Search for diseases, symptoms, and treatment information.</p>
-            <div className="max-w-md mx-auto">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Start typing to search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="justify-start h-auto p-4">
-                <div className="text-left">
-                  <div className="font-medium">Emergency Contacts</div>
-                  <div className="text-sm text-gray-500">Find local veterinarians</div>
+                  {!result.error && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm">
+                      <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow">
+                        <h4 className="font-semibold mb-1 text-green-800">💊 Treatment</h4>
+                        <p>{result.treatment || "N/A"}</p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow">
+                        <h4 className="font-semibold mb-1 text-yellow-800">🧯 First Aid</h4>
+                        <p>{result.firstAid || "N/A"}</p>
+                      </div>
+                      <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 shadow">
+                        <h4 className="font-semibold mb-1 text-blue-800">🛡️ Prevention</h4>
+                        <p>{result.prevention || "N/A"}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </Button>
-              <Button variant="outline" className="justify-start h-auto p-4">
-                <div className="text-left">
-                  <div className="font-medium">Prevention Guide</div>
-                  <div className="text-sm text-gray-500">Learn about disease prevention</div>
-                </div>
-              </Button>
-              <Button variant="outline" className="justify-start h-auto p-4">
-                <div className="text-left">
-                  <div className="font-medium">Health Records</div>
-                  <div className="text-sm text-gray-500">Record diagnosis and treatment</div>
-                </div>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

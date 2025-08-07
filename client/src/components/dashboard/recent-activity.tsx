@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Clock, Plus } from "lucide-react";
 
+
 interface ActivityLog {
   id: string;
   action: string;

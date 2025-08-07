@@ -1,4 +1,4 @@
-# FarmCare Pro - Livestock Health Management System
+# Farm Pulse - Livestock Health Management System
 
 ## Overview
 

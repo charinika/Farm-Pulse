@@ -1,46 +1,16 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useState, useRef, ChangeEvent } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload } from "lucide-react";
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  species: z.string().min(1, "Species is required"),
-  breed: z.string().optional(),
-  gender: z.string().min(1, "Gender is required"),
-  dateOfBirth: z.string().optional(),
-  weight: z.string().optional(),
-  tagNumber: z.string().optional(),
-  notes: z.string().optional(),
-});
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddAnimalModalProps {
   isOpen: boolean;
@@ -48,258 +18,178 @@ interface AddAnimalModalProps {
 }
 
 export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps) {
-  const { toast } = useToast();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [breed, setBreed] = useState("");
+  const [animalType, setAnimalType] = useState("");
+  const [gender, setGender] = useState("");
+  const [weight, setWeight] = useState("");
+  const [description, setDescription] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      species: "",
-      breed: "",
-      gender: "",
-      dateOfBirth: "",
-      weight: "",
-      tagNumber: "",
-      notes: "",
-    },
-  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema> & { photo?: File }) => {
-      const formData = new FormData();
-      
-      Object.entries(data).forEach(([key, value]) => {
-        if (value && key !== "photo") {
-          formData.append(key, value);
-        }
-      });
-      
-      if (selectedFile) {
-        formData.append("photo", selectedFile);
-      }
-
-      const response = await fetch("/api/livestock", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || "Failed to create animal");
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/livestock"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/metrics"] });
-      toast({
-        title: "Success",
-        description: "Animal added successfully",
-      });
-      onClose();
-      form.reset();
-      setSelectedFile(null);
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to add animal",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    createMutation.mutate(data);
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = "Name is required";
+    if (!age.trim() || isNaN(Number(age))) newErrors.age = "Valid age is required";
+    if (!breed.trim()) newErrors.breed = "Breed is required";
+    if (!animalType.trim()) newErrors.animalType = "Animal type is required";
+    if (!gender.trim()) newErrors.gender = "Gender is required";
+    if (!weight.trim() || isNaN(Number(weight))) newErrors.weight = "Valid weight is required";
+    if (!description.trim()) newErrors.description = "Description is required";
+    if (!image) newErrors.image = "Image is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Image = reader.result as string;
+
+      const storedAnimals = JSON.parse(localStorage.getItem("livestock") || "[]");
+
+      const newAnimal = {
+        id: Date.now(),
+        name,
+        age: Number(age),
+        breed,
+        animalType,
+        gender,
+        weight: Number(weight),
+        description,
+        image: base64Image,
+      };
+
+      const updatedAnimals = [...storedAnimals, newAnimal];
+      localStorage.setItem("livestock", JSON.stringify(updatedAnimals));
+      resetForm();
+      onClose();
+    };
+
+    if (image) {
+      reader.readAsDataURL(image);
     }
+  };
+
+  const resetForm = () => {
+    setName("");
+    setAge("");
+    setBreed("");
+    setAnimalType("");
+    setGender("");
+    setWeight("");
+    setDescription("");
+    setImage(null);
+    setImagePreview(null);
+    setErrors({});
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Add New Animal</DialogTitle>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Animal Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter animal name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+        <div className="space-y-3">
+          <div>
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+          </div>
+
+          <div>
+            <Label>Age</Label>
+            <Input value={age} onChange={(e) => setAge(e.target.value)} />
+            {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
+          </div>
+
+          <div>
+            <Label>Breed</Label>
+            <Input value={breed} onChange={(e) => setBreed(e.target.value)} />
+            {errors.breed && <p className="text-red-500 text-sm">{errors.breed}</p>}
+          </div>
+
+          <div>
+            <Label>Animal Type</Label>
+            <Select onValueChange={setAnimalType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select animal type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cow">Cow</SelectItem>
+                <SelectItem value="Buffalo">Buffalo</SelectItem>
+                <SelectItem value="Goat">Goat</SelectItem>
+                <SelectItem value="Sheep">Sheep</SelectItem>
+                <SelectItem value="Chicken">Chicken</SelectItem>
+                <SelectItem value="Pig">Pig</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.animalType && <p className="text-red-500 text-sm">{errors.animalType}</p>}
+          </div>
+
+          <div>
+            <Label>Gender</Label>
+            <Select onValueChange={setGender}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select gender" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Male">Male</SelectItem>
+                <SelectItem value="Female">Female</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+          </div>
+
+          <div>
+            <Label>Weight (kg)</Label>
+            <Input value={weight} onChange={(e) => setWeight(e.target.value)} />
+            {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
+          </div>
+
+          <div>
+            <Label>Description</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+          </div>
+
+          <div>
+            <Label>Image</Label>
+            <Input type="file" accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
+            {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="mt-2 w-full h-40 object-cover rounded"
               />
+            )}
+          </div>
+        </div>
 
-              <FormField
-                control={form.control}
-                name="species"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Species</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select species" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cattle">Cattle</SelectItem>
-                        <SelectItem value="sheep">Sheep</SelectItem>
-                        <SelectItem value="goat">Goat</SelectItem>
-                        <SelectItem value="pig">Pig</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="breed"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Breed</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter breed" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="gender"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gender</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="dateOfBirth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Date of Birth</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="weight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Enter weight" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tagNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tag Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter tag number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Enter any additional notes" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Photo Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Photo</label>
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-primary">
-                <div className="space-y-1 text-center">
-                  <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                  <div className="flex text-sm text-gray-600">
-                    <label className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary/80">
-                      <span>Upload a file</span>
-                      <input
-                        type="file"
-                        className="sr-only"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                    </label>
-                    <p className="pl-1">or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                  {selectedFile && (
-                    <p className="text-sm text-primary">Selected: {selectedFile.name}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Adding..." : "Add Animal"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        <DialogFooter className="mt-4">
+          <Button onClick={handleSubmit}>Add Animal</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

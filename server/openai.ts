@@ -1,15 +1,26 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!,
+});
 
+// Exported for use in /api/chat route
 export async function createChatCompletion(
-  messages: Array<{ role: "user" | "assistant" | "system"; content: string }>
+  userMessage: string
 ): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
-      messages: messages,
+      messages: [
+        {
+          role: "system",
+          content: createSystemPrompt(),
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
       max_tokens: 1000,
       temperature: 0.7,
     });
@@ -21,8 +32,9 @@ export async function createChatCompletion(
   }
 }
 
+// System instructions for the AI
 export function createSystemPrompt(): string {
-  return `You are FarmCare AI, a helpful assistant specialized in livestock health management. You help farmers with:
+  return `You are Farm Pulse AI, a helpful assistant specialized in livestock health management. You help farmers with:
 
 - Animal health advice and diagnosis
 - Veterinary care recommendations
