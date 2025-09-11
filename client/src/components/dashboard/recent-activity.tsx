@@ -1,16 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Clock, Plus } from "lucide-react";
-
+import { CheckCircle } from "lucide-react";
 
 interface ActivityLog {
-  id: string;
-  action: string;
-  description: string;
-  createdAt: string;
-  livestock?: {
-    name: string;
-    species: string;
-  };
+  id: number;
+  user_id: number;
+  activity: string;
+  timestamp: string;
 }
 
 interface RecentActivityProps {
@@ -19,50 +14,22 @@ interface RecentActivityProps {
 }
 
 export default function RecentActivity({ activities, isLoading }: RecentActivityProps) {
-  const getActivityIcon = (action: string) => {
-    switch (action) {
-      case "vaccination_completed":
-      case "health_record_added":
-        return <CheckCircle className="w-4 h-4 text-white" />;
-      case "medicine_reminder":
-        return <Clock className="w-4 h-4 text-white" />;
-      case "animal_added":
-        return <Plus className="w-4 h-4 text-white" />;
-      default:
-        return <CheckCircle className="w-4 h-4 text-white" />;
-    }
-  };
-
-  const getActivityColor = (action: string) => {
-    switch (action) {
-      case "vaccination_completed":
-      case "health_record_added":
-        return "bg-success";
-      case "medicine_reminder":
-        return "bg-accent";
-      case "animal_added":
-        return "bg-primary";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 60) {
       return `${diffInMinutes} minutes ago`;
     }
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+      return `${diffInHours} hour${diffInHours > 1 ? "s" : ""} ago`;
     }
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
   };
 
   if (isLoading) {
@@ -107,25 +74,18 @@ export default function RecentActivity({ activities, isLoading }: RecentActivity
                     )}
                     <div className="relative flex items-start space-x-3">
                       <div className="relative">
-                        <div className={`h-8 w-8 rounded-full ring-8 ring-white flex items-center justify-center ${getActivityColor(activity.action)}`}>
-                          {getActivityIcon(activity.action)}
+                        <div className="h-8 w-8 rounded-full ring-8 ring-white flex items-center justify-center bg-primary">
+                          <CheckCircle className="w-4 h-4 text-white" />
                         </div>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div>
-                          <div className="text-sm">
-                            <span className="font-medium text-gray-900">
-                              {activity.description}
-                            </span>
-                          </div>
-                          {activity.livestock && (
-                            <p className="mt-0.5 text-sm text-gray-500">
-                              {activity.livestock.species} - {activity.livestock.name}
-                            </p>
-                          )}
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-900">
+                            {activity.activity}
+                          </span>
                         </div>
                         <div className="mt-2 text-sm text-gray-500">
-                          <time>{formatTimeAgo(activity.createdAt)}</time>
+                          <time>{formatTimeAgo(activity.timestamp)}</time>
                         </div>
                       </div>
                     </div>

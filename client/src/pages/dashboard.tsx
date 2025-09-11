@@ -10,13 +10,9 @@ import HealthChart from "@/components/dashboard/health-chart";
 import RecentActivity from "@/components/dashboard/recent-activity";
 import { Bell, Stethoscope, Syringe, TrendingUp, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { activityLogs } from "@shared/schema";
-import type { InferSelectModel } from "drizzle-orm";
+import { ActivityLog } from "@/types/activity-log";
 
-// ✅ Infer the ActivityLog type from the schema
-type ActivityLog = InferSelectModel<typeof activityLogs>;
-
-// Define other types
+// ---------- Types ----------
 type Metrics = {
   totalLivestock: number;
   healthyAnimals: number;
@@ -24,37 +20,48 @@ type Metrics = {
   monthlyExpenses: number;
 };
 
+// The UI expects these normalized fields
 type Reminder = {
   id: string;
   medicineName: string;
   nextDueDate: string;
 };
 
+// ---------- Helpers ----------
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+  }
+  return (await res.json()) as T;
+};
+
 export default function Dashboard() {
-  // Metrics Query
-  const {
-    data: metrics,
-    isLoading: isLoadingMetrics,
-    error: metricsError,
-  } = useQuery<Metrics>({
+  // Metrics
+  const { data: metrics, isLoading: isLoadingMetrics } = useQuery<Metrics>({
     queryKey: ["/api/dashboard/metrics"],
+    queryFn: ({ queryKey }) => fetcher<Metrics>(queryKey[0] as string),
+    refetchOnWindowFocus: false,
+    staleTime: 10_000,
   });
 
-  // Activity Logs Query
+  // Activity Logs
   const {
     data: activityLogsData,
     isLoading: isLoadingActivity,
-    error: activityError,
   } = useQuery<ActivityLog[]>({
     queryKey: ["/api/activity-logs"],
+    queryFn: ({ queryKey }) => fetcher<ActivityLog[]>(queryKey[0] as string),
+    refetchOnWindowFocus: false,
+    staleTime: 10_000,
   });
 
-  // Overdue Reminders Query
-  const {
-    data: overdueReminders,
-    error: remindersError,
-  } = useQuery<Reminder[]>({
+  // Overdue Reminders (raw shape may vary -> normalize)
+  const { data: overdueRaw } = useQuery<Record<string, any>[]>({
     queryKey: ["/api/medicine-reminders/overdue"],
+    queryFn: ({ queryKey }) => fetcher<Record<string, any>[]>(queryKey[0] as string),
+    refetchOnWindowFocus: false,
+    staleTime: 10_000,
   });
 
   const safeMetrics: Metrics = metrics ?? {
@@ -65,7 +72,13 @@ export default function Dashboard() {
   };
 
   const safeActivityLogs: ActivityLog[] = activityLogsData ?? [];
-  const safeOverdueReminders: Reminder[] = overdueReminders ?? [];
+
+  // Normalize reminders to what the UI expects
+  const safeOverdueReminders: Reminder[] = (overdueRaw ?? []).map((r) => ({
+    id: String(r.id ?? r.reminder_id ?? r.livestock_id ?? Math.random()),
+    medicineName: r.medicine ?? r.medicine_name ?? r.vaccine ?? r.title ?? "Medicine",
+    nextDueDate: r.nextDueDate ?? r.due_date ?? r.schedule ?? "",
+  }));
 
   return (
     <div className="p-6 space-y-6">
@@ -143,8 +156,8 @@ export default function Dashboard() {
           <p className="text-muted-foreground">No overdue reminders 🎉</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {safeOverdueReminders.slice(0, 3).map((reminder: Reminder) => (
-              <Card key={reminder.id}>
+            {safeOverdueReminders.slice(0, 3).map((reminder, idx) => (
+              <Card key={`${reminder.id}-${idx}`}>
                 <CardHeader>
                   <CardTitle className="text-base">{reminder.medicineName}</CardTitle>
                   <CardDescription>

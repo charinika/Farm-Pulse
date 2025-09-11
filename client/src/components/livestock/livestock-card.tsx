@@ -15,6 +15,7 @@ interface LivestockCardProps {
   onViewProfile: () => void;
   onTrackProductivity: () => void;
   onViewProductivity: () => void;
+  onDelete: () => void;   // ✅ NEW
 }
 
 export function LivestockCard({
@@ -22,6 +23,7 @@ export function LivestockCard({
   onViewProfile,
   onTrackProductivity,
   onViewProductivity,
+  onDelete,   // ✅ NEW
 }: LivestockCardProps) {
   return (
     <Card className="w-full sm:w-[300px] shadow-md border">
@@ -50,6 +52,15 @@ export function LivestockCard({
           </Button>
           <Button variant="default" className="bg-purple-600 hover:bg-purple-700" onClick={onViewProductivity}>
             View Productivity
+          </Button>
+
+          {/* 🚨 New Delete Button */}
+          <Button
+            variant="destructive"
+            className="bg-red-600 hover:bg-red-700"
+            onClick={onDelete}
+          >
+            Delete Profile
           </Button>
         </div>
       </CardContent>

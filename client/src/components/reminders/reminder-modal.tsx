@@ -1,84 +1,86 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Reminder } from "@/pages/reminders";
 
-interface Livestock {
-  id: string;
-  name: string;
+interface Props {
+  onClose: () => void;
+  onSave: (reminder: Reminder) => void;
+  initialData?: Reminder;
 }
 
-interface ReminderModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSave: () => void;
-  livestock: Livestock[];
-}
+export default function ReminderModal({ onClose, onSave, initialData }: Props) {
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [description, setDescription] = useState(
+    initialData?.description || ""
+  );
+  const [type, setType] = useState<"general" | "vaccination" | "medicine">(
+    initialData?.type || "general"
+  );
+  const [dueDate, setDueDate] = useState(
+    initialData?.dueDate || new Date().toISOString().split("T")[0]
+  );
 
-export default function ReminderModal({ open, onOpenChange, onSave, livestock }: ReminderModalProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [livestockId, setLivestockId] = useState("");
-
-  const handleSubmit = async () => {
-    if (!title || !dueDate) return;
-
-    const res = await fetch("/api/reminders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, dueDate, livestockId }),
-    });
-
-    if (res.ok) {
-      setTitle("");
-      setDescription("");
-      setDueDate("");
-      setLivestockId("");
-      onSave();
-      onOpenChange(false);
-    }
+  const handleSubmit = () => {
+    const reminder: Reminder = {
+      id: initialData?.id || Date.now(),
+      title,
+      description,
+      type,
+      dueDate,
+      isOverdue: new Date(dueDate) < new Date(),
+    };
+    onSave(reminder);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Reminder</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label>Title</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-          </div>
-          <div>
-            <Label>Due Date</Label>
-            <Input type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          </div>
-          <div>
-            <Label>Livestock</Label>
-            <select
-              value={livestockId}
-              onChange={(e) => setLivestockId(e.target.value)}
-              className="w-full border rounded px-2 py-1"
-            >
-              <option value="">None</option>
-              {livestock.map((animal) => (
-                <option key={animal.id} value={animal.id}>
-                  {animal.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Button onClick={handleSubmit}>Save</Button>
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h2 className="text-xl font-bold mb-4">
+          {initialData ? "Edit Reminder" : "Add Reminder"}
+        </h2>
+
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border p-2 mb-2 rounded"
+        />
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full border p-2 mb-2 rounded"
+        />
+        <select
+          value={type}
+          onChange={(e) =>
+            setType(e.target.value as "general" | "vaccination" | "medicine")
+          }
+          className="w-full border p-2 mb-2 rounded"
+        >
+          <option value="general">General</option>
+          <option value="vaccination">Vaccination</option>
+          <option value="medicine">Medicine</option>
+        </select>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="w-full border p-2 mb-4 rounded"
+        />
+
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-green-600 text-white rounded"
+          >
+            Save
+          </button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

@@ -3,9 +3,6 @@ import jsPDF from "jspdf";
 import {
   Input,
   Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Button,
 } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,9 +18,9 @@ import {
 
 interface PredictionResult {
   prediction?: string;
-  treatment?: string;
-  firstAid?: string;
-  prevention?: string;
+  treatment?: string[];
+  firstAid?: string[];
+  prevention?: string[];
   file: File;
   error?: boolean;
   message?: string;
@@ -67,7 +64,7 @@ export default function DiseaseDiagnosis() {
       formData.append("file", image);
 
       try {
-        const res = await fetch("/api/diagnosis/diagnose-image", {
+        const res = await fetch("/api/diagnosis/predict", {
           method: "POST",
           body: formData,
         });
@@ -115,9 +112,9 @@ export default function DiseaseDiagnosis() {
     } else {
       doc.setTextColor(0, 0, 0);
       doc.text(`✅ Prediction: ${result.prediction}`, 10, 50);
-      doc.text(`💊 Treatment: ${result.treatment || "N/A"}`, 10, 60);
-      doc.text(`🧯 First Aid: ${result.firstAid || "N/A"}`, 10, 70);
-      doc.text(`🛡️ Prevention: ${result.prevention || "N/A"}`, 10, 80);
+      doc.text(`💊 Treatment: ${result.treatment?.join(", ") || "N/A"}`, 10, 60);
+      doc.text(`🧯 First Aid: ${result.firstAid?.join(", ") || "N/A"}`, 10, 70);
+      doc.text(`🛡️ Prevention: ${result.prevention?.join(", ") || "N/A"}`, 10, 80);
     }
 
     doc.save(`prediction-${index + 1}.pdf`);
@@ -249,15 +246,15 @@ export default function DiseaseDiagnosis() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm">
                       <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow">
                         <h4 className="font-semibold mb-1 text-green-800">💊 Treatment</h4>
-                        <p>{result.treatment || "N/A"}</p>
+                        <p>{result.treatment?.join(", ") || "N/A"}</p>
                       </div>
                       <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow">
                         <h4 className="font-semibold mb-1 text-yellow-800">🧯 First Aid</h4>
-                        <p>{result.firstAid || "N/A"}</p>
+                        <p>{result.firstAid?.join(", ") || "N/A"}</p>
                       </div>
                       <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 shadow">
                         <h4 className="font-semibold mb-1 text-blue-800">🛡️ Prevention</h4>
-                        <p>{result.prevention || "N/A"}</p>
+                        <p>{result.prevention?.join(", ") || "N/A"}</p>
                       </div>
                     </div>
                   )}

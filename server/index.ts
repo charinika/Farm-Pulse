@@ -5,6 +5,10 @@ import { setupAuth } from "./auth";
 import routes from "./routes";
 import { setupVite } from "./vite"; // your custom vite middleware setup
 import { createServer } from "http";
+import { createProxyMiddleware } from "http-proxy-middleware"; // ⭐ added
+
+import dashboardRoute from "./routes/dashboard";
+import livestockRoutes from "./routes/livestock";
 
 dotenv.config();
 
@@ -25,6 +29,22 @@ setupAuth(app);
 
 // Setup API routes under /api
 app.use("/api", routes);
+
+// ⭐ Proxy: forward /api/diagnosis requests to Flask backend
+app.use(
+  "/api/diagnosis",
+  createProxyMiddleware({
+    target: "http://127.0.0.1:8000", // Flask backend URL
+    changeOrigin: true,
+    pathRewrite: {
+      "^/api/diagnosis/diagnose-image": "/predict",
+    },
+  })
+);
+
+// Other API routes
+app.use("/api/dashboard", dashboardRoute);
+app.use("/api/livestock", livestockRoutes);
 
 // Create HTTP server from Express app
 const httpServer = createServer(app);

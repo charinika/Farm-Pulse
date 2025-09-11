@@ -1,4 +1,8 @@
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -6,18 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddAnimalModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAddAnimal: (animal: any) => void;
 }
 
-export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps) {
+export default function AddAnimalModal({ isOpen, onClose, onAddAnimal }: AddAnimalModalProps) {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [breed, setBreed] = useState("");
@@ -28,17 +29,21 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset form whenever modal opens
+  useEffect(() => {
+    if (isOpen) resetForm();
+  }, [isOpen]);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
+      reader.onloadend = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -58,14 +63,12 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
   };
 
   const handleSubmit = () => {
+    setSubmitted(true);
     if (!validateForm()) return;
 
     const reader = new FileReader();
     reader.onloadend = () => {
       const base64Image = reader.result as string;
-
-      const storedAnimals = JSON.parse(localStorage.getItem("livestock") || "[]");
-
       const newAnimal = {
         id: Date.now(),
         name,
@@ -78,15 +81,19 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
         image: base64Image,
       };
 
-      const updatedAnimals = [...storedAnimals, newAnimal];
-      localStorage.setItem("livestock", JSON.stringify(updatedAnimals));
+      // Save to localStorage
+      const stored = localStorage.getItem("livestock");
+      const list = stored ? JSON.parse(stored) : [];
+      localStorage.setItem("livestock", JSON.stringify([...list, newAnimal]));
+
+      // Notify parent
+      onAddAnimal(newAnimal);
+
       resetForm();
       onClose();
     };
 
-    if (image) {
-      reader.readAsDataURL(image);
-    }
+    if (image) reader.readAsDataURL(image);
   };
 
   const resetForm = () => {
@@ -100,11 +107,20 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
     setImage(null);
     setImagePreview(null);
     setErrors({});
+    setSubmitted(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          resetForm();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-md max-h-[90vh] overflow-auto">
         <DialogHeader>
           <DialogTitle>Add New Animal</DialogTitle>
@@ -114,19 +130,19 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
           <div>
             <Label>Name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
-            {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+            {submitted && errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
           </div>
 
           <div>
             <Label>Age</Label>
             <Input value={age} onChange={(e) => setAge(e.target.value)} />
-            {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
+            {submitted && errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
           </div>
 
           <div>
             <Label>Breed</Label>
             <Input value={breed} onChange={(e) => setBreed(e.target.value)} />
-            {errors.breed && <p className="text-red-500 text-sm">{errors.breed}</p>}
+            {submitted && errors.breed && <p className="text-red-500 text-sm">{errors.breed}</p>}
           </div>
 
           <div>
@@ -144,7 +160,7 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
                 <SelectItem value="Pig">Pig</SelectItem>
               </SelectContent>
             </Select>
-            {errors.animalType && <p className="text-red-500 text-sm">{errors.animalType}</p>}
+            {submitted && errors.animalType && <p className="text-red-500 text-sm">{errors.animalType}</p>}
           </div>
 
           <div>
@@ -158,25 +174,25 @@ export default function AddAnimalModal({ isOpen, onClose }: AddAnimalModalProps)
                 <SelectItem value="Female">Female</SelectItem>
               </SelectContent>
             </Select>
-            {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+            {submitted && errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
           </div>
 
           <div>
             <Label>Weight (kg)</Label>
             <Input value={weight} onChange={(e) => setWeight(e.target.value)} />
-            {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
+            {submitted && errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
           </div>
 
           <div>
             <Label>Description</Label>
             <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-            {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
+            {submitted && errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
           </div>
 
           <div>
             <Label>Image</Label>
             <Input type="file" accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
-            {errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
+            {submitted && errors.image && <p className="text-red-500 text-sm">{errors.image}</p>}
             {imagePreview && (
               <img
                 src={imagePreview}

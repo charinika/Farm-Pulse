@@ -1,63 +1,49 @@
-// components/reminders/reminder-card.tsx
+import React from "react";
+import { Reminder } from "@/pages/reminders";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Clock } from "lucide-react";
-
-type Reminder = {
-  id: string;
-  type: "medicine" | "vaccination";
-  title: string;
-  animalName?: string;
-  dueDate: string;
-  isOverdue: boolean;
-  description?: string;
-};
-
-type ReminderCardProps = {
+interface Props {
   reminder: Reminder;
-  onMarkComplete: () => void;
-  onReschedule: (newDate: string) => void;
-};
+  onEdit: (reminder: Reminder) => void;
+  onDelete: (id: number) => void;
+}
 
-// ✅ Fix: Explicitly declare props type
-export default function ReminderCard({
-  reminder,
-  onMarkComplete,
-  onReschedule,
-}: ReminderCardProps) {
+export default function ReminderCard({ reminder, onEdit, onDelete }: Props) {
+  const dueDate = new Date(reminder.dueDate);
+  const isOverdue = dueDate < new Date() && !reminder.isOverdue;
+
   return (
-    <Card className="mb-4 shadow">
-      <CardContent className="p-4 flex justify-between items-center">
-        <div>
-          <div className="text-sm text-muted-foreground flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            {reminder.type.toUpperCase()} REMINDER
-          </div>
-          <div className="text-lg font-semibold">{reminder.title}</div>
-          <div className="text-sm">For: {reminder.animalName || "Unknown animal"}</div>
-          <div className="text-sm">Due: {new Date(reminder.dueDate).toLocaleDateString()}</div>
-          {reminder.description && (
-            <div className="text-sm text-muted-foreground mt-1">{reminder.description}</div>
-          )}
-          {reminder.isOverdue && (
-            <Badge variant="destructive" className="mt-2">Overdue</Badge>
-          )}
-        </div>
-        <div className="flex flex-col gap-2 items-end">
-          <Button variant="outline" onClick={onMarkComplete}>Mark Complete</Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              const newDate = prompt("Enter new due date (YYYY-MM-DD):");
-              if (newDate) onReschedule(newDate);
-            }}
-          >
-            Reschedule
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div
+      className={`p-4 rounded-lg shadow-md border ${
+        isOverdue ? "bg-red-100 border-red-400" : "bg-white border-gray-200"
+      }`}
+    >
+      <h2 className="text-lg font-semibold">{reminder.title}</h2>
+      <p className="text-sm text-gray-600">{reminder.description}</p>
+      <p className="text-xs mt-2">
+        <span className="font-semibold">Type:</span> {reminder.type}
+      </p>
+      <p
+        className={`text-xs mt-1 ${
+          isOverdue ? "text-red-600 font-bold" : "text-gray-600"
+        }`}
+      >
+        Due: {dueDate.toLocaleDateString()}
+      </p>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={() => onEdit(reminder)}
+          className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => onDelete(reminder.id)}
+          className="px-3 py-1 bg-red-500 text-white rounded-md text-sm"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
   );
 }

@@ -1,75 +1,89 @@
-// components/reminders/reminder-card.tsx
+import React, { useEffect, useState } from "react";
+import ReminderModal from "@/components/reminders/reminder-modal";
+import ReminderCard from "@/components/reminders/reminder-card";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Clock, Pencil, Trash2, CheckCircle } from "lucide-react";
-
-type Reminder = {
-  id: string;
-  type: "medicine" | "vaccination";
+export interface Reminder {
+  id: number;
   title: string;
+  description: string;
+  type: "general" | "vaccination" | "medicine";
   dueDate: string;
   isOverdue: boolean;
-  animalName?: string;
-  description?: string;
-};
+}
 
-type ReminderCardProps = {
-  reminder: Reminder;
-  onEdit: (reminder: Reminder) => void;
-  onDelete: (reminderId: string) => Promise<void>;
-  onComplete: (reminder: Reminder) => Promise<void>;
-};
+export default function RemindersPage() {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
-export default function ReminderCard({
-  reminder,
-  onEdit,
-  onDelete,
-  onComplete,
-}: ReminderCardProps) {
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this reminder?")) {
-      onDelete(reminder.id);
+  // ✅ Load reminders from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("reminders");
+    if (stored) {
+      setReminders(JSON.parse(stored));
     }
+  }, []);
+
+  // ✅ Save reminders whenever they change
+  useEffect(() => {
+    localStorage.setItem("reminders", JSON.stringify(reminders));
+  }, [reminders]);
+
+  const handleAddOrUpdateReminder = (reminder: Reminder) => {
+    if (editingReminder) {
+      setReminders((prev) =>
+        prev.map((r) => (r.id === editingReminder.id ? reminder : r))
+      );
+      setEditingReminder(null);
+    } else {
+      setReminders((prev) => [...prev, { ...reminder, id: Date.now() }]);
+    }
+    setIsModalOpen(false);
   };
 
-  const handleComplete = () => {
-    onComplete(reminder);
+  const handleEdit = (reminder: Reminder) => {
+    setEditingReminder(reminder);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    setReminders((prev) => prev.filter((r) => r.id !== id));
   };
 
   return (
-    <Card className="shadow hover:shadow-md transition-all">
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            {reminder.type.toUpperCase()} REMINDER
-          </div>
-          {reminder.isOverdue && (
-            <span className="text-red-500 text-xs font-semibold">Overdue</span>
-          )}
-        </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Reminders</h1>
+      <button
+        onClick={() => {
+          setEditingReminder(null);
+          setIsModalOpen(true);
+        }}
+        className="px-4 py-2 bg-green-600 text-white rounded-lg"
+      >
+        + Add Reminder
+      </button>
 
-        <div className="text-lg font-semibold">{reminder.title}</div>
-        <div className="text-sm">Animal: {reminder.animalName || "N/A"}</div>
-        <div className="text-sm">Due: {new Date(reminder.dueDate).toLocaleDateString()}</div>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {reminders.map((reminder) => (
+          <ReminderCard
+            key={reminder.id}
+            reminder={reminder}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        ))}
+      </div>
 
-        {reminder.description && (
-          <div className="text-sm text-muted-foreground">{reminder.description}</div>
-        )}
-
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="ghost" size="icon" onClick={() => onEdit(reminder)}>
-            <Pencil className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleDelete}>
-            <Trash2 className="w-4 h-4 text-red-500" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={handleComplete}>
-            <CheckCircle className="w-4 h-4 text-green-600" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+      {isModalOpen && (
+        <ReminderModal
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingReminder(null);
+          }}
+          onSave={handleAddOrUpdateReminder}
+          initialData={editingReminder || undefined}
+        />
+      )}
+    </div>
   );
 }

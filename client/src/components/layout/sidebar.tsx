@@ -23,7 +23,7 @@ const navigation = [
   { name: "Disease Diagnosis", href: "/disease-diagnosis", icon: Stethoscope },
   { name: "Emergency Protocols", href: "/emergency-protocols", icon: AlertTriangle },
   { name: "Community Forum", href: "/community-forum", icon: MessageSquare },
-  { name: "AI Assistant", href: "/chatbot", icon: Bot },
+,
 ];
 
 export default function Sidebar() {
@@ -48,7 +48,7 @@ export default function Sidebar() {
       <div className="flex flex-col w-64 bg-white border-r border-gray-200">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 px-4 bg-primary">
-          <h1 className="text-xl font-bold text-white">🚜 FarmCare Pro</h1>
+          <h1 className="text-xl font-bold text-white">Farm Pulse</h1>
         </div>
         
         {/* Navigation */}
@@ -84,31 +84,25 @@ export default function Sidebar() {
         </nav>
         
         {/* User Profile */}
-        <div className="flex-shrink-0 p-4 border-t border-gray-200">
-          <div className="flex items-center mb-3">
-            <img 
-              className="w-8 h-8 rounded-full object-cover" 
-              src={user?.profileImageUrl || "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150"} 
-              alt="Profile picture" 
-            />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-700">
-                {user?.firstName || user?.email?.split('@')[0] || "Farm Manager"}
-              </p>
-              <p className="text-xs text-gray-500">Farm Manager</p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => logoutMutation.mutate()}
-            disabled={logoutMutation.isPending}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
-          </Button>
-        </div>
+<div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
+  <div className="mb-3">
+    <p className="text-sm font-semibold text-gray-800">
+      {user?.username|| "Farm Manager"}
+    </p>
+    <p className="text-xs text-gray-500">Farm Manager</p>
+  </div>
+  <Button
+    variant="outline"
+    size="sm"
+    className="w-full transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
+    onClick={() => logoutMutation.mutate()}
+    disabled={logoutMutation.isPending}
+  >
+    <LogOut className="w-4 h-4 mr-2" />
+    {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
+  </Button>
+</div>
+
       </div>
     </div>
   );

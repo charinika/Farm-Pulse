@@ -9,6 +9,14 @@ import {
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+// SESSION (for connect-pg-simple)
+import { json } from "drizzle-orm/pg-core";
+
+export const session = pgTable("session", {
+  sid: varchar("sid", { length: 255 }).primaryKey(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire", { withTimezone: false, mode: "date" }).notNull(),
+});
 
 // USERS
 export const users = pgTable("users", {
@@ -43,13 +51,17 @@ export type InsertLivestock = z.infer<typeof insertLivestockSchema>;
 // HEALTH RECORDS
 export const healthRecords = pgTable("health_records", {
   id: serial("id").primaryKey(),
-  livestock_id: integer("livestock_id").references(() => livestock.id, { onDelete: "cascade" }).notNull(),
+  livestock_id: integer("livestock_id")
+    .references(() => livestock.id, { onDelete: "cascade" })
+    .notNull(),
   condition: text("condition").notNull(),
   treatment: text("treatment"),
+  health_status: varchar("health_status", { length: 50 }).notNull().default("unknown"), // ✅ new column
   recorded_at: timestamp("recorded_at", { withTimezone: true }).defaultNow(),
 });
 export const insertHealthRecordSchema = createInsertSchema(healthRecords).omit({ id: true });
 export type InsertHealthRecord = z.infer<typeof insertHealthRecordSchema>;
+
 
 // MEDICINE REMINDERS
 export const medicineReminders = pgTable("medicine_reminders", {
