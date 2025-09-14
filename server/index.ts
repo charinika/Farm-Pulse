@@ -9,36 +9,35 @@ import { createProxyMiddleware } from "http-proxy-middleware"; // ⭐ added
 
 import dashboardRoute from "./routes/dashboard";
 import livestockRoutes from "./routes/livestock";
+import chatRoute from "./routes/chat";
 
+// after other routes
 dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(
-  cors({
-    origin: "http://localhost:5173", // your Vite frontend origin
-    credentials: true,
-  })
-);
-
+// Parse JSON
 app.use(express.json());
 
-// Setup authentication middleware
+// CORS
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+
+// Auth
 setupAuth(app);
 
-// Setup API routes under /api
+// Chat route first
+app.use("/api/chat", chatRoute);
+
+// General /api routes
 app.use("/api", routes);
 
-// ⭐ Proxy: forward /api/diagnosis requests to Flask backend
+// Proxy to Flask
 app.use(
   "/api/diagnosis",
   createProxyMiddleware({
-    target: "http://127.0.0.1:8000", // Flask backend URL
+    target: "http://127.0.0.1:8000",
     changeOrigin: true,
-    pathRewrite: {
-      "^/api/diagnosis/diagnose-image": "/predict",
-    },
+    pathRewrite: { "^/api/diagnosis": "/predict" },
   })
 );
 
@@ -46,10 +45,10 @@ app.use(
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/livestock", livestockRoutes);
 
-// Create HTTP server from Express app
+// Create HTTP server
 const httpServer = createServer(app);
 
-// Setup Vite dev server middleware (async)
+// Setup Vite
 setupVite(app, httpServer).then(() => {
   httpServer.listen(port, () => {
     console.log(`🚀 Dev server running at http://localhost:${port}`);

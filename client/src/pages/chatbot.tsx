@@ -1,132 +1,128 @@
 import { useState, useRef, useEffect } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bot, User, Send, Loader2 } from "lucide-react";
+import { Send } from "lucide-react";
 
-interface ChatbotMessage {
+interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
-  createdAt: string;
 }
 
 export default function ChatbotPage() {
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // load/create a conversation automatically
-  const { data: conversations } = useQuery({
-    queryKey: ["/api/chatbot/conversations"],
-    onSuccess: (data) => {
-      if (data && data.length > 0 && !selectedConversationId) {
-        setSelectedConversationId(data[0].id);
-      }
-    },
-  });
-
-  const { data: messages, isLoading: isLoadingMessages } = useQuery({
-    queryKey: ["/api/chatbot/conversations", selectedConversationId, "messages"],
-    enabled: !!selectedConversationId,
-  });
-
-  const createConversationMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/chatbot/conversations", {
-        title: "New Conversation",
-      });
-      return await res.json();
-    },
-    onSuccess: (conversation) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/chatbot/conversations"] });
-      setSelectedConversationId(conversation.id);
-    },
-  });
-
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      const res = await apiRequest(
-        "POST",
-        `/api/chatbot/conversations/${selectedConversationId}/messages`,
-        { content }
-      );
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/chatbot/conversations", selectedConversationId, "messages"],
-      });
-      setMessage("");
-    },
-  });
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim() || !selectedConversationId || sendMessageMutation.isPending) return;
-    sendMessageMutation.mutate(message.trim());
-  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Auto-create conversation if none exists
-  useEffect(() => {
-    if (conversations && conversations.length === 0) {
-      createConversationMutation.mutate();
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input.trim(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage.content }),
+      });
+
+      const data = await res.json();
+      const reply: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: data.reply || "Sorry, I couldn't respond.",
+      };
+
+      setMessages((prev) => [...prev, reply]);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Error: Could not reach server.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
     }
-  }, [conversations]);
+  };
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto border rounded-lg">
-      {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {isLoadingMessages ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin" />
-          </div>
-        ) : (
-          messages?.map((msg: ChatbotMessage) => (
+    <div className="flex-1 flex flex-col h-screen border shadow-lg bg-white relative">
+      {/* Chat Header */}
+      <div className="p-4 border-b bg-primary text-primary-foreground font-semibold text-lg rounded-t-none">
+  Farm AI Assistant
+</div>
+
+      {/* Chat Messages area with warm neutral background */}
+      <div
+        className="flex-1 relative overflow-y-auto p-4 space-y-3 bg-gray-100"
+        style={{ paddingBottom: "6rem" }}
+      >
+        {/* Chat bubbles */}
+        {messages.map((msg) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
-              key={msg.id}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`max-w-[75%] p-3 text-sm rounded-xl shadow ${
+                msg.role === "user"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-white text-gray-900"
+              }`}
             >
-              <div
-                className={`max-w-[75%] p-3 rounded-lg text-sm ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-gray-100 text-gray-900"
-                }`}
-              >
-                {msg.content}
-              </div>
+              {msg.content}
             </div>
-          ))
-        )}
-        {sendMessageMutation.isPending && (
+          </div>
+        ))}
+
+        {loading && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 p-3 rounded-lg flex items-center space-x-2">
-              <Bot className="w-4 h-4 text-gray-500" />
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="bg-white p-3 rounded-xl shadow text-sm animate-pulse">
+              AI is typing...
             </div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Box */}
-      <form onSubmit={handleSendMessage} className="border-t p-3 flex space-x-2">
+      {/* Input Box (floating above bottom) */}
+      <form
+        onSubmit={handleSendMessage}
+        className="absolute left-0 right-0 px-4 flex space-x-2 bg-gray-50 rounded-t-xl"
+        style={{ bottom: "3rem" }}
+      >
         <Input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type your message..."
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask me anything about your farm..."
           className="flex-1"
-          disabled={sendMessageMutation.isPending}
+          disabled={loading}
         />
-        <Button type="submit" disabled={!message.trim() || sendMessageMutation.isPending}>
-          <Send className="w-4 h-4" />
+        <Button
+          type="submit"
+          disabled={!input.trim() || loading}
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Send className="w-5 h-5" />
         </Button>
       </form>
     </div>

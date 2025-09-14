@@ -1,20 +1,8 @@
 import { useState, useRef } from "react";
 import jsPDF from "jspdf";
-import {
-  Input,
-  Card,
-  Button,
-} from "@/components/ui";
+import { Input, Card, Button } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Search,
-  Trash2,
-  Loader2,
-  UploadCloud,
-  Download,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Search, Trash2, Loader2, Download, Moon, Sun } from "lucide-react";
 
 interface PredictionResult {
   prediction?: string;
@@ -47,9 +35,7 @@ export default function DiseaseDiagnosis() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(file =>
-      file.type.startsWith("image/")
-    );
+    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith("image/"));
     setSelectedImages(prev => [...prev, ...files]);
     setPredictions([]);
   };
@@ -121,148 +107,150 @@ export default function DiseaseDiagnosis() {
   };
 
   return (
-    <div
-      className={`relative p-6 min-h-screen max-w-6xl mx-auto transition-colors ${
-        darkMode ? "bg-gray-900 text-white" : "bg-white text-black"
-      }`}
-    >
-      <div className="relative z-10">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold text-center text-green-700 w-full">
-            🐄 AI-Powered Livestock Disease Diagnosis
-          </h2>
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
-            {darkMode ? <Sun /> : <Moon />}
-          </Button>
-        </div>
+    <div className={`p-6 min-h-screen transition-colors ${darkMode ? "bg-gray-900 text-white" : "bg-green-50 text-black"}`}>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-green-800 flex items-center gap-2">
+          🐄 AI-Powered Livestock Disease Diagnosis
+        </h1>
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {darkMode ? <Sun /> : <Moon />}
+        </Button>
+      </div>
 
+      {/* Upload + Info Section: left narrow, right wide, equal height */}
+      <div className="flex max-w-6xl mx-auto gap-6">
+        {/* Left - Compact Narrow Upload Card (1/4 width) */}
         <div
           ref={dropRef}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`border-dashed border-2 p-8 rounded-xl text-center cursor-pointer transition-all duration-300 shadow-md ${
-            isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-green-400"
-          }`}
           onClick={() => dropRef.current?.querySelector("input")?.click()}
+          className="bg-white p-4 rounded-lg shadow-md flex flex-col items-center justify-center cursor-pointer w-1/4 h-80 transition hover:shadow-lg"
         >
-          <UploadCloud className="mx-auto mb-3 text-green-600" size={40} />
-          <p className="mb-2 font-medium">Drag & drop images here or click to browse</p>
-          <Input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
+          <div
+            className={`border-2 border-dashed p-4 w-full h-full flex flex-col items-center justify-center rounded-md transition-all duration-300
+              ${isDragging ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-green-400"}`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a1 1 0 001 1h14a1 1 0 001-1v-1m-4-4l-4-4m0 0l-4 4m4-4v12" />
+            </svg>
+            <p className="text-gray-700 font-medium text-center text-sm">Drag & drop or click to upload</p>
+          </div>
+
+          <Input type="file" multiple accept="image/*" onChange={handleImageChange} className="hidden" />
         </div>
 
-        {selectedImages.length > 0 && (
-          <>
-            <div className="flex flex-wrap gap-4 mt-6 justify-center">
-              {selectedImages.map((img, idx) => (
-                <div key={idx} className="relative group">
-                  <img
-                    src={URL.createObjectURL(img)}
-                    alt={`preview-${idx}`}
-                    className="w-32 h-32 object-cover rounded-lg border shadow hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute top-1 left-1">
-                    <Checkbox
-                      checked={selectedToClear.has(idx)}
-                      onCheckedChange={() => toggleCheckbox(idx)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex gap-3 justify-center">
-              <Button
-                onClick={handleImageUpload}
-                disabled={uploading}
-                className="flex items-center px-5"
-              >
-                {uploading ? <Loader2 className="animate-spin mr-2" /> : <Search className="mr-2" />}
-                Diagnose
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleClearSelected}
-                className="flex items-center px-5"
-              >
-                <Trash2 className="mr-2" />
-                Clear Selected
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleClearAll}
-                className="flex items-center px-5"
-              >
-                <Trash2 className="mr-2" />
-                Clear All
-              </Button>
-            </div>
-          </>
-        )}
+        {/* Right - Wider Info Card (3/4 width) */}
+        <div className="bg-white p-6 rounded-lg shadow-md flex flex-col justify-between w-3/4 h-80">
+          <div>
+            <h2 className="text-xl font-semibold text-green-700 mb-3 flex items-center gap-2">
+              🌱 How this works
+            </h2>
+            <p className="text-gray-600 mb-4">
+              Upload images of your livestock showing symptoms. Our AI model will analyze the image and provide:
+            </p>
 
-        <div className="mt-10 space-y-6">
-          {predictions.map((result, index) => (
-            <Card key={index} className="border border-green-300 rounded-xl shadow-md p-6">
-              <div className="flex flex-col md:flex-row items-start gap-6">
+
+            <h3 className="text-lg font-semibold text-green-700 mb-2">💡 Tips for Best Results</h3>
+            <ul className="space-y-1 text-gray-700">
+              <li>📷 Take clear close-up photos of affected areas.</li>
+              <li>🌞 Ensure good lighting and avoid shadows.</li>
+              <li>🖼 Upload multiple images if needed for accurate prediction.</li>
+            </ul>
+          </div>
+
+          <p className="text-sm text-gray-500 mt-4">Note: The AI diagnosis is for guidance only. Consult a veterinarian for confirmation.</p>
+        </div>
+      </div>
+
+      {/* Selected Images & Buttons */}
+      {selectedImages.length > 0 && (
+        <>
+          <div className="flex flex-wrap gap-4 mt-6 justify-center">
+            {selectedImages.map((img, idx) => (
+              <div key={idx} className="relative group">
                 <img
-                  src={URL.createObjectURL(result.file)}
-                  alt={`predicted-${index}`}
-                  className="w-40 h-40 object-cover rounded-md border shadow"
+                  src={URL.createObjectURL(img)}
+                  alt={`preview-${idx}`}
+                  className="w-32 h-32 object-cover rounded-lg border shadow hover:scale-105 transition-transform"
                 />
-                <div className="flex-1 space-y-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h3 className="text-xl font-semibold text-green-800">
-                        Prediction #{index + 1}: {result.file?.name}
-                      </h3>
-                      {result.error ? (
-                        <p className="text-red-600 mt-1 font-medium">❌ {result.message}</p>
-                      ) : (
-                        <p className="mt-1">✅ Disease: <strong>{result.prediction}</strong></p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox checked={selectedToClear.has(index)} onCheckedChange={() => toggleCheckbox(index)} />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadPDF(result, index)}
-                        className="text-xs"
-                      >
-                        <Download className="mr-1 h-4 w-4" /> Download
-                      </Button>
-                    </div>
-                  </div>
-
-                  {!result.error && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm">
-                      <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow">
-                        <h4 className="font-semibold mb-1 text-green-800">💊 Treatment</h4>
-                        <p>{result.treatment?.join(", ") || "N/A"}</p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow">
-                        <h4 className="font-semibold mb-1 text-yellow-800">🧯 First Aid</h4>
-                        <p>{result.firstAid?.join(", ") || "N/A"}</p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 shadow">
-                        <h4 className="font-semibold mb-1 text-blue-800">🛡️ Prevention</h4>
-                        <p>{result.prevention?.join(", ") || "N/A"}</p>
-                      </div>
-                    </div>
-                  )}
+                <div className="absolute top-1 left-1">
+                  <Checkbox checked={selectedToClear.has(idx)} onCheckedChange={() => toggleCheckbox(idx)} />
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div className="mt-4 flex gap-3 justify-center">
+            <Button onClick={handleImageUpload} disabled={uploading} className="flex items-center px-5">
+              {uploading ? <Loader2 className="animate-spin mr-2" /> : <Search className="mr-2" />}
+              Diagnose
+            </Button>
+
+            <Button variant="destructive" onClick={handleClearSelected} className="flex items-center px-5">
+              <Trash2 className="mr-2" />
+              Clear Selected
+            </Button>
+
+            <Button variant="outline" onClick={handleClearAll} className="flex items-center px-5">
+              <Trash2 className="mr-2" />
+              Clear All
+            </Button>
+          </div>
+        </>
+      )}
+
+      {/* Predictions */}
+      <div className="mt-10 space-y-6">
+        {predictions.map((result, index) => (
+          <Card key={index} className="border border-green-300 rounded-xl shadow-md p-6">
+            <div className="flex flex-col md:flex-row items-start gap-6">
+              <img src={URL.createObjectURL(result.file)} alt={`predicted-${index}`} className="w-40 h-40 object-cover rounded-md border shadow" />
+              <div className="flex-1 space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-xl font-semibold text-green-800">
+                      Prediction #{index + 1}: {result.file?.name}
+                    </h3>
+                    {result.error ? (
+                      <p className="text-red-600 mt-1 font-medium">❌ {result.message}</p>
+                    ) : (
+                      <p className="mt-1">✅ Disease: <strong>{result.prediction}</strong></p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox checked={selectedToClear.has(index)} onCheckedChange={() => toggleCheckbox(index)} />
+                    <Button variant="outline" size="sm" onClick={() => downloadPDF(result, index)} className="text-xs">
+                      <Download className="mr-1 h-4 w-4" /> Download
+                    </Button>
+                  </div>
+                </div>
+
+                {!result.error && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-sm">
+                    <div className="p-4 rounded-lg bg-green-50 border border-green-200 shadow">
+                      <h4 className="font-semibold mb-1 text-green-800">💊 Treatment</h4>
+                      <p>{result.treatment?.join(", ") || "N/A"}</p>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-yellow-50 border border-yellow-200 shadow">
+                      <h4 className="font-semibold mb-1 text-yellow-800">🧯 First Aid</h4>
+                      <p>{result.firstAid?.join(", ") || "N/A"}</p>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-blue-50 border border-blue-200 shadow">
+                      <h4 className="font-semibold mb-1 text-blue-800">🛡️ Prevention</h4>
+                      <p>{result.prevention?.join(", ") || "N/A"}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     </div>
   );

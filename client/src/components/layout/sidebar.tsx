@@ -23,7 +23,7 @@ const navigation = [
   { name: "Disease Diagnosis", href: "/disease-diagnosis", icon: Stethoscope },
   { name: "Emergency Protocols", href: "/emergency-protocols", icon: AlertTriangle },
   { name: "Community Forum", href: "/community-forum", icon: MessageSquare },
-,
+  { name: "Chatbot Assistant", href: "/chatbot", icon: Bot },
 ];
 
 export default function Sidebar() {
@@ -45,7 +45,7 @@ export default function Sidebar() {
 
   return (
     <div className="hidden lg:flex lg:flex-shrink-0">
-      <div className="flex flex-col w-64 bg-white border-r border-gray-200">
+      <div className="flex flex-col w-64 bg-green-100 border-r border-gray-200">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 px-4 bg-primary">
           <h1 className="text-xl font-bold text-white">Farm Pulse</h1>
@@ -63,7 +63,7 @@ export default function Sidebar() {
                   "flex items-center px-2 py-2 text-sm font-medium rounded-md group",
                   isActive
                     ? "text-white bg-primary"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    : "text-gray-700 hover:bg-green-200 hover:text-gray-900"
                 )}>
                   <Icon className="w-5 h-5 mr-3" />
                   {item.name}
@@ -84,25 +84,22 @@ export default function Sidebar() {
         </nav>
         
         {/* User Profile */}
-<div className="flex-shrink-0 p-4 border-t border-gray-200 bg-gray-50">
-  <div className="mb-3">
-    <p className="text-sm font-semibold text-gray-800">
-      {user?.username|| "Farm Manager"}
-    </p>
-    <p className="text-xs text-gray-500">Farm Manager</p>
-  </div>
-  <Button
-    variant="outline"
-    size="sm"
-    className="w-full transition-colors duration-200 hover:bg-red-50 hover:text-red-600"
-    onClick={() => logoutMutation.mutate()}
-    disabled={logoutMutation.isPending}
-  >
-    <LogOut className="w-4 h-4 mr-2" />
-    {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
-  </Button>
-</div>
-
+        <div className="flex-shrink-0 p-4 border-t border-green-200 bg-gray-100">
+          <div className="mb-3">
+            <p className="text-sm font-semibold text-gray-800">
+              {user?.username || "Farm Owner"}
+            </p>
+            <p className="text-xs text-gray-500">Farm Manager</p>
+          </div>
+          <Button
+            className="w-full bg-red-200 text-black hover:bg-yellow-100 transition-colors duration-200"
+            onClick={() => logoutMutation.mutate()}
+            disabled={logoutMutation.isPending}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            {logoutMutation.isPending ? "Signing Out..." : "Sign Out"}
+          </Button>
+        </div>
       </div>
     </div>
   );

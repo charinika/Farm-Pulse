@@ -73,8 +73,8 @@ export default function EmergencyProtocols() {
   ];
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">🚨 Emergency Protocols</h1>
+    <div className="p-6 bg-gray-100">
+      <h1 className="text-2xl font-bold mb-4 " >🚨 Emergency Protocols</h1>
       <p className="text-gray-600 mb-6">
         Quick, verified helplines and first-aid steps for livestock and companion animal emergencies in Tamil Nadu. 
         Numbers last verified: <b>Aug 2025</b>. If a line is busy, try the next option or contact the nearest hospital.

@@ -1,21 +1,37 @@
-import { Router } from "express";
-import openai from "../openai";
+// server/routes/chat.ts
+import express from "express";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const router = Router();
+const router = express.Router();
 
-router.post("/chat", async (req, res) => {
-  const { message } = req.body;
+// Initialize Gemini client with your API key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+router.post("/", async (req, res) => {
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // or "gpt-4"
-      messages: [{ role: "user", content: message }],
-    });
+    const { message } = req.body || {};
 
-    res.json({ reply: completion.choices[0].message.content });
-  } catch (err) {
-    console.error("OpenAI error:", err);
-    res.status(500).json({ message: "OpenAI error" });
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    // Get the Gemini model
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Generate a response
+    const result = await model.generateContent(message);
+
+    // Extract text reply
+    const reply = result.response.text();
+
+    res.json({ reply });
+  } catch (error: any) {
+    console.error("❌ Gemini API Error:", error);
+
+    res.status(500).json({
+      error: "Gemini API Error",
+      details: error.message || error.toString(),
+    });
   }
 });
 

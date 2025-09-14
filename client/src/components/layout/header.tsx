@@ -52,7 +52,7 @@ export default function Header() {
   }, [location]);
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-gray shadow-sm border-b border-gray-200">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left Section */}
