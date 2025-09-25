@@ -75,7 +75,7 @@ export default function AuthPage() {
   const handleLogin = (data: LoginData) => loginMutation.mutate(data);
 
   const handleRegister = (data: RegisterData) => {
-    // ✅ Fix: remove confirmPassword before sending to backend
+  
     const { confirmPassword, ...rest } = data;
     registerMutation.mutate(rest);
   };
@@ -85,15 +85,15 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        {/* Hero Section */}
+        
         <div className="space-y-8">
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-6xl font-bold text-gray-900">
               Welcome to{" "}
-              <span className="text-green-600">FarmCare Pro</span>
+              <span className="text-green-600">Farm Pulse</span>
             </h1>
             <p className="text-xl text-gray-600">
-              Complete livestock health management system designed for modern farmers
+              Complete livestock health management system designed for Farmers
             </p>
           </div>
 
@@ -105,7 +105,6 @@ export default function AuthPage() {
           </div>
         </div>
 
-        {/* Auth Form Section */}
         <div className="w-full max-w-md mx-auto">
           <Card className="border-0 shadow-xl">
             <CardHeader className="space-y-1">
@@ -121,7 +120,7 @@ export default function AuthPage() {
                   <TabsTrigger value="register">Sign Up</TabsTrigger>
                 </TabsList>
 
-                {/* Login Tab */}
+                
                 <TabsContent value="login" className="space-y-4">
                   <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                     <InputField
@@ -152,7 +151,7 @@ export default function AuthPage() {
                   </form>
                 </TabsContent>
 
-                {/* Register Tab */}
+                
                 <TabsContent value="register" className="space-y-4">
                   <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                     <InputField
@@ -199,7 +198,7 @@ export default function AuthPage() {
   );
 }
 
-// InputField component
+
 function InputField({ id, label, type = "text", placeholder, form, name }: any) {
   return (
     <div className="space-y-2">
@@ -219,7 +218,7 @@ function InputField({ id, label, type = "text", placeholder, form, name }: any) 
   );
 }
 
-// Feature component
+
 function Feature({ icon, title, desc, bg }: { icon: React.ReactNode, title: string, desc: string, bg: string }) {
   return (
     <div className="flex items-start space-x-3">

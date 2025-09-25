@@ -80,7 +80,7 @@ export default function EmergencyProtocols() {
         Numbers last verified: <b>Aug 2025</b>. If a line is busy, try the next option or contact the nearest hospital.
       </p>
 
-      {/* Ambulance Section */}
+      
       <h2 className="text-xl font-semibold border-b pb-2 mb-4">🚑 Ambulance</h2>
       <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-col justify-between min-h-[140px]">
         <div>
@@ -95,7 +95,7 @@ export default function EmergencyProtocols() {
         </button>
       </div>
 
-      {/* Hospitals Section */}
+      
       <h2 className="text-xl font-semibold border-b pb-2 mb-4">🏥 Veterinary Hospitals</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {hospitals.map((h, idx) => (
@@ -115,7 +115,7 @@ export default function EmergencyProtocols() {
         ))}
       </div>
 
-      {/* First Aid Section */}
+      
       <h2 className="text-xl font-semibold border-b pb-2 mb-4 flex items-center gap-2">
         <AlertTriangle className="text-yellow-600" size={22} /> First Aid Quick Steps
       </h2>

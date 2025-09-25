@@ -1,42 +1,21 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ReminderModal from "@/components/reminders/reminder-modal";
 import ReminderCard from "@/components/reminders/reminder-card";
-
-export interface Reminder {
-  id: number;
-  title: string;
-  description: string;
-  type: "general" | "vaccination" | "medicine";
-  dueDate: string;
-  isOverdue: boolean;
-}
+import { useReminders } from "@/components/reminders/RemindersContext"; // ✅ import context
+import { Reminder } from "@/types/reminder";
+import { useTranslatedText } from "@/hooks/useTranslatedText";
 
 export default function RemindersPage() {
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const { reminders, addReminder, updateReminder, deleteReminder } = useReminders(); // ✅ use context
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
 
-  // ✅ Load reminders from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem("reminders");
-    if (stored) {
-      setReminders(JSON.parse(stored));
-    }
-  }, []);
-
-  // ✅ Save reminders whenever they change
-  useEffect(() => {
-    localStorage.setItem("reminders", JSON.stringify(reminders));
-  }, [reminders]);
-
   const handleAddOrUpdateReminder = (reminder: Reminder) => {
     if (editingReminder) {
-      setReminders((prev) =>
-        prev.map((r) => (r.id === editingReminder.id ? reminder : r))
-      );
+      updateReminder({ ...reminder, id: editingReminder.id }); // ✅ context update
       setEditingReminder(null);
     } else {
-      setReminders((prev) => [...prev, { ...reminder, id: Date.now() }]);
+      addReminder(reminder); // ✅ context add
     }
     setIsModalOpen(false);
   };
@@ -47,12 +26,13 @@ export default function RemindersPage() {
   };
 
   const handleDelete = (id: number) => {
-    setReminders((prev) => prev.filter((r) => r.id !== id));
+    deleteReminder(id); // ✅ context delete
   };
 
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Reminders</h1>
+
       <button
         onClick={() => {
           setEditingReminder(null);
@@ -64,14 +44,20 @@ export default function RemindersPage() {
       </button>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {reminders.map((reminder) => (
-          <ReminderCard
-            key={reminder.id}
-            reminder={reminder}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        ))}
+        {reminders.length === 0 ? (
+          <p className="text-gray-500 col-span-full text-center">
+            No reminders yet. Click "Add Reminder" to create one.
+          </p>
+        ) : (
+          reminders.map((reminder) => (
+            <ReminderCard
+              key={reminder.id}
+              reminder={reminder}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))
+        )}
       </div>
 
       {isModalOpen && (

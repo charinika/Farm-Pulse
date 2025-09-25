@@ -65,17 +65,17 @@ export default function ChatbotPage() {
 
   return (
     <div className="flex-1 flex flex-col h-screen border shadow-lg bg-white relative">
-      {/* Chat Header */}
+      
       <div className="p-4 border-b bg-primary text-primary-foreground font-semibold text-lg rounded-t-none">
   Farm AI Assistant
 </div>
 
-      {/* Chat Messages area with warm neutral background */}
+      
       <div
         className="flex-1 relative overflow-y-auto p-4 space-y-3 bg-gray-100"
         style={{ paddingBottom: "6rem" }}
       >
-        {/* Chat bubbles */}
+        
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -104,7 +104,7 @@ export default function ChatbotPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Box (floating above bottom) */}
+      
       <form
         onSubmit={handleSendMessage}
         className="absolute left-0 right-0 px-4 flex space-x-2 bg-gray-50 rounded-t-xl"

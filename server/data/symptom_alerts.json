@@ -1,0 +1,189 @@
+[
+  {
+    "id": 1,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "loss of appetite"
+    ],
+    "predicted_disease": "Unknown",
+    "risk_level": "Low",
+    "action": "Monitor animal, consult vet if persists",
+    "timestamp": "2025-09-20T16:41:26.971Z"
+  },
+  {
+    "id": 2,
+    "animal_id": "2",
+    "symptoms": [
+      "fever",
+      "cough",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Pneumonia",
+    "risk_level": "High",
+    "action": "Isolate animal, call veterinarian, provide antibiotics",
+    "timestamp": "2025-09-20T16:48:32.828Z"
+  },
+  {
+    "id": 3,
+    "animal_id": "2",
+    "symptoms": [
+      "cough"
+    ],
+    "predicted_disease": "Unknown",
+    "risk_level": "Low",
+    "action": "Monitor animal, consult vet if persists",
+    "timestamp": "2025-09-20T16:48:56.833Z"
+  },
+  {
+    "id": 4,
+    "animal_id": "2",
+    "symptoms": [
+      "cough",
+      "loss of appetite",
+      "fever"
+    ],
+    "predicted_disease": "Unknown",
+    "risk_level": "Low",
+    "action": "Monitor animal, consult vet if persists",
+    "timestamp": "2025-09-20T16:49:05.696Z"
+  },
+  {
+    "id": 5,
+    "animal_id": "3",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Pneumonia",
+    "risk_level": "High",
+    "action": "Isolate animal, call veterinarian, provide antibiotics",
+    "timestamp": "2025-09-20T17:44:53.906Z"
+  },
+  {
+    "id": 6,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Pneumonia",
+    "risk_level": "High",
+    "action": "Isolate animal, call veterinarian, provide antibiotics",
+    "timestamp": "2025-09-21T04:19:11.797Z"
+  },
+  {
+    "id": 7,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Respiratory Infection",
+    "risk_level": "Medium",
+    "action": "Provide clean air, isolate, consult vet",
+    "timestamp": "2025-09-21T04:19:11.797Z"
+  },
+  {
+    "id": 8,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Respiratory Infection",
+    "risk_level": "Medium",
+    "action": "Provide clean air, isolate if needed, consult vet",
+    "timestamp": "2025-09-21T04:19:11.797Z"
+  },
+  {
+    "id": 9,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Mastitis",
+    "risk_level": "High",
+    "action": "Milk frequently, keep udder clean, consult vet for antibiotics",
+    "timestamp": "2025-09-21T04:19:11.797Z"
+  },
+  {
+    "id": 10,
+    "animal_id": "1",
+    "symptoms": [
+      "cough",
+      "fever",
+      "nasal discharge"
+    ],
+    "predicted_disease": "Foot and Mouth Disease",
+    "risk_level": "High",
+    "action": "Strict isolation, notify vet, disinfect environment",
+    "timestamp": "2025-09-21T04:19:11.797Z"
+  },
+  {
+    "id": 11,
+    "animal_id": "5",
+    "symptoms": [
+      "cough",
+      "diarrhea"
+    ],
+    "predicted_disease": "Respiratory Infection",
+    "risk_level": "Medium",
+    "action": "Provide clean air, isolate if needed, consult vet",
+    "timestamp": "2025-09-21T04:19:27.190Z"
+  },
+  {
+    "id": 12,
+    "animal_id": "5",
+    "symptoms": [
+      "cough",
+      "diarrhea"
+    ],
+    "predicted_disease": "Pneumonia",
+    "risk_level": "High",
+    "action": "Isolate animal, call veterinarian, provide antibiotics",
+    "timestamp": "2025-09-21T04:19:27.190Z"
+  },
+  {
+    "id": 13,
+    "animal_id": "5",
+    "symptoms": [
+      "cough",
+      "diarrhea"
+    ],
+    "predicted_disease": "Enterotoxemia",
+    "risk_level": "High",
+    "action": "Provide fluids, call vet, maintain hygiene",
+    "timestamp": "2025-09-21T04:19:27.190Z"
+  },
+  {
+    "id": 14,
+    "animal_id": "5",
+    "symptoms": [
+      "cough",
+      "diarrhea"
+    ],
+    "predicted_disease": "Worm Infestation",
+    "risk_level": "Medium",
+    "action": "Deworm under vet guidance, maintain pasture hygiene",
+    "timestamp": "2025-09-21T04:19:27.190Z"
+  },
+  {
+    "id": 15,
+    "animal_id": "5",
+    "symptoms": [
+      "cough",
+      "diarrhea"
+    ],
+    "predicted_disease": "Respiratory Infection",
+    "risk_level": "Medium",
+    "action": "Provide clean air, isolate, consult vet",
+    "timestamp": "2025-09-21T04:19:27.190Z"
+  }
+]

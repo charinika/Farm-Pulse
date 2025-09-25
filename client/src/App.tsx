@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter"; // Import WouterRouter
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,15 +7,18 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import AuthPage from "@/pages/auth-page";
 import Dashboard from "@/pages/dashboard";
 import LivestockProfiles from "@/pages/livestock-profiles";
-import HealthRecords from "@/pages/health-records";
+
 import Reminders from "@/pages/reminders";
 import DiseaseDiagnosis from "@/pages/disease-diagnosis";
 import EmergencyProtocols from "@/pages/emergency-protocols";
 import CommunityForum from "@/pages/community-forum";
 import ChatbotPage from "@/pages/chatbot";
 import NotFound from "@/pages/not-found";
-import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
+import SymptomAlertPage from "@/pages/symptom-alertpage";
+import HomePage from "@/pages/home-page";
+import NutritionRecommendation from "./pages/NutritionRecommendation";
+import { LanguageProvider } from "@/pages/LanguageContext";
 
 function Router() {
   const { user, isLoading } = useAuth();
@@ -39,19 +42,24 @@ function Router() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar />
+    <div className="flex flex-col h-screen overflow-auto">
+      {/* Header always visible */}
+      <Header />
+
+      {/* Page content */}
       <div className="flex-1 overflow-auto">
-        <Header />
         <Switch>
-          <Route path="/" component={Dashboard} />
+          <Route path="/" component={HomePage} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/livestock" component={LivestockProfiles} />
-          <Route path="/health-records" component={HealthRecords} />
+        
           <Route path="/reminders" component={Reminders} />
           <Route path="/disease-diagnosis" component={DiseaseDiagnosis} />
           <Route path="/emergency-protocols" component={EmergencyProtocols} />
           <Route path="/community-forum" component={CommunityForum} />
           <Route path="/chatbot" component={ChatbotPage} />
+          <Route path="/symptoms" component={SymptomAlertPage} />
+          <Route path="/nutrition" component={NutritionRecommendation}/>
           <Route component={NotFound} />
         </Switch>
       </div>
@@ -61,14 +69,18 @@ function Router() {
 
 function App() {
   return (
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
           <Toaster />
-          <Router />
+          <WouterRouter> {/* Wrap Router in WouterRouter */}
+            <Router />
+          </WouterRouter>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
+    </LanguageProvider>
   );
 }
 

@@ -5,45 +5,67 @@ import { setupAuth } from "./auth";
 import routes from "./routes";
 import { setupVite } from "./vite"; // your custom vite middleware setup
 import { createServer } from "http";
-import { createProxyMiddleware } from "http-proxy-middleware"; // ⭐ added
-
+import { createProxyMiddleware } from "http-proxy-middleware";
+import path from "path";
 import dashboardRoute from "./routes/dashboard";
 import livestockRoutes from "./routes/livestock";
 import chatRoute from "./routes/chat";
+import symptomsRoute from "./routes/symptoms";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import forumRoutes from "./forum";
+import nutritionRoute from "./routes/nutrition";
+import translateRoute from "./routes/translate";
 
-// after other routes
+// ES module __dirname equivalent
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const dataDir = path.join(__dirname, "data");
+
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Parse JSON
+// Parse JSON (only once)
 app.use(express.json());
 
-// CORS
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+// CORS - allow credentials for session cookies
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your frontend URL
+    credentials: true,
+  })
+);
 
-// Auth
+// Auth setup (Passport + session)
 setupAuth(app);
 
-// Chat route first
+// Chat route
 app.use("/api/chat", chatRoute);
 
 // General /api routes
 app.use("/api", routes);
 
-// Proxy to Flask
+// Proxy to Flask backend for diagnosis
 app.use(
   "/api/diagnosis",
   createProxyMiddleware({
     target: "http://127.0.0.1:8000",
     changeOrigin: true,
     pathRewrite: { "^/api/diagnosis": "/predict" },
+    cookieDomainRewrite: "localhost", // ensures cookies from Flask are rewritten
   })
 );
+
 
 // Other API routes
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/livestock", livestockRoutes);
+app.use("/api/symptoms", symptomsRoute);
+app.use("/api/forum", forumRoutes);
+app.use("/api/nutrition", nutritionRoute);
+app.use("/api/translate", translateRoute);
 
 // Create HTTP server
 const httpServer = createServer(app);

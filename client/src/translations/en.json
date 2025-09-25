@@ -1,0 +1,10 @@
+{
+  "home": "Home",
+  "farm_pulse": "Farm Pulse",
+  "weather_unavailable": "Weather unavailable",
+  "upcoming_reminders": "Upcoming Reminders",
+  "overdue_reminders": "Overdue Reminders",
+  "notifications": "Notifications",
+  "reminder_due": "is due at",
+  "reminder_type": "Type"
+}

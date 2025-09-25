@@ -24,6 +24,7 @@ const navigation = [
   { name: "Emergency Protocols", href: "/emergency-protocols", icon: AlertTriangle },
   { name: "Community Forum", href: "/community-forum", icon: MessageSquare },
   { name: "Chatbot Assistant", href: "/chatbot", icon: Bot },
+  { name: "Symptom Alerts", href: "/symptoms", icon: AlertTriangle }
 ];
 
 export default function Sidebar() {

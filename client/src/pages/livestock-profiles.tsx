@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Stethoscope } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ViewProfileModal from "@/components/livestock/ViewProfileModal";
 import TrackProductivityModal from "@/components/livestock/TrackProductivityModal";
@@ -59,13 +59,14 @@ export default function LivestockProfiles() {
     setProductivity(updated);
     localStorage.setItem("productivity", JSON.stringify(updated));
   };
+
   const handleDeleteAnimal = (id: number) => {
-  if (window.confirm("Are you sure you want to delete this animal?")) {
-    const updated = animals.filter((a) => a.id !== id);
-    setAnimals(updated);
-    localStorage.setItem("livestock", JSON.stringify(updated));
-  }
-};
+    if (window.confirm("Are you sure you want to delete this animal?")) {
+      const updated = animals.filter((a) => a.id !== id);
+      setAnimals(updated);
+      localStorage.setItem("livestock", JSON.stringify(updated));
+    }
+  };
 
   const filteredAnimals = animals.filter(
     (a) => (filterType === "all" || a.animalType === filterType) &&
@@ -73,63 +74,88 @@ export default function LivestockProfiles() {
   );
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Livestock Profiles</h1>
-        <div className="flex gap-4 items-center">
-          <Select onValueChange={setFilterType}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Filter by Type" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="Cow">Cow</SelectItem>
-              <SelectItem value="Sheep">Sheep</SelectItem>
-              <SelectItem value="Goat">Goat</SelectItem>
-              <SelectItem value="Buffalo">Buffalo</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="p-6 bg-stone-50 min-h-screen">
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-400 rounded-lg">
+              <Stethoscope className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-stone-800">Livestock Profiles</h1>
+          </div>
+          <div className="flex gap-4 items-center flex-wrap">
+            <div className="w-[150px]">
+              <Select onValueChange={setFilterType}>
+                <SelectTrigger
+                  className="w-full border-stone-300 bg-white text-stone-800"
+                  // Type assertion to suppress the error
+                  {...({ className: "w-full border-stone-300 bg-white text-stone-800" } as any)}
+                >
+                  <SelectValue placeholder="Filter by Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-stone-200">
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="Cow">Cow</SelectItem>
+                  <SelectItem value="Sheep">Sheep</SelectItem>
+                  <SelectItem value="Goat">Goat</SelectItem>
+                  <SelectItem value="Buffalo">Buffalo</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select onValueChange={setFilterGender}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Filter by Gender" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Genders</SelectItem>
-              <SelectItem value="Male">Male</SelectItem>
-              <SelectItem value="Female">Female</SelectItem>
-            </SelectContent>
-          </Select>
+            <div className="w-[150px]">
+              <Select onValueChange={setFilterGender}>
+                <SelectTrigger
+                  className="w-full border-stone-300 bg-white text-stone-800"
+                  // Type assertion to suppress the error
+                  {...({ className: "w-full border-stone-300 bg-white text-stone-800" } as any)}
+                >
+                  <SelectValue placeholder="Filter by Gender" />
+                </SelectTrigger>
+                <SelectContent className="bg-white border-stone-200">
+                  <SelectItem value="all">All Genders</SelectItem>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Button
-            onClick={() => setAddModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-full"
-          >
-            <Plus className="mr-2 h-5 w-5" /> Add Animal
-          </Button>
+            <Button
+              onClick={() => setAddModalOpen(true)}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-2 px-6 rounded-full transition-all duration-300 flex items-center"
+            >
+              <Plus className="mr-2 h-5 w-5" /> Add Animal
+            </Button>
+          </div>
         </div>
       </div>
 
       {filteredAnimals.length === 0 ? (
-        <p className="text-gray-500 text-center">No animals match the selected filters.</p>
+        <p className="text-stone-600 text-center py-8">No animals match the selected filters.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filteredAnimals.map((animal) => (
-            <LivestockCard
-              key={animal.id}
-              animal={{
-                id: animal.id.toString(),
-                name: animal.name,
-                breed: animal.breed,
-                age: animal.age,
-                type: animal.animalType,
-                gender: animal.gender,
-                weight: animal.weight.toString(),
-                image: animal.image,
-              }}
-              onViewProfile={() => { setSelectedAnimal(animal); setShowProfile(true); }}
-              onTrackProductivity={() => { setSelectedAnimal(animal); setShowTrackModal(true); }}
-              onViewProductivity={() => { setSelectedAnimal(animal); setShowViewProductivity(true); }}
-              onDelete={() => handleDeleteAnimal(animal.id)} // 🚨 New
-            />
-          ))}
+        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {filteredAnimals.map((animal) => (
+              <LivestockCard
+                key={animal.id}
+                animal={{
+                  id: animal.id.toString(),
+                  name: animal.name,
+                  breed: animal.breed,
+                  age: animal.age,
+                  type: animal.animalType,
+                  gender: animal.gender,
+                  weight: animal.weight.toString(),
+                  image: animal.image,
+                }}
+                onViewProfile={() => { setSelectedAnimal(animal); setShowProfile(true); }}
+                onTrackProductivity={() => { setSelectedAnimal(animal); setShowTrackModal(true); }}
+                onViewProductivity={() => { setSelectedAnimal(animal); setShowViewProductivity(true); }}
+                onDelete={() => handleDeleteAnimal(animal.id)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
