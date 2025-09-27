@@ -25,9 +25,12 @@ const dataDir = path.join(__dirname, "data");
 
 dotenv.config();
 const app = express();
-const port = process.env.PORT || 5000;
 
-// Parse JSON (only once)
+// Use the PORT from environment variables (Render sets this)
+const PORT = process.env.PORT || 5000;
+const HOST = "0.0.0.0"; // Must be 0.0.0.0 for Render external access
+
+// Parse JSON
 app.use(express.json());
 
 // CORS - allow credentials for session cookies
@@ -58,7 +61,6 @@ app.use(
   })
 );
 
-
 // Other API routes
 app.use("/api/dashboard", dashboardRoute);
 app.use("/api/livestock", livestockRoutes);
@@ -72,7 +74,7 @@ const httpServer = createServer(app);
 
 // Setup Vite
 setupVite(app, httpServer).then(() => {
-  httpServer.listen(port, () => {
-    console.log(`🚀 Dev server running at http://localhost:${port}`);
+  httpServer.listen(PORT, HOST, () => {
+    console.log(`🚀 Dev server running at http://${HOST}:${PORT}`);
   });
 });
