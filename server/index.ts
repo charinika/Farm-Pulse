@@ -27,7 +27,7 @@ dotenv.config();
 const app = express();
 
 // Use the PORT from environment variables (Render sets this)
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 const HOST = "0.0.0.0"; // Must be 0.0.0.0 for Render external access
 
 // Parse JSON
