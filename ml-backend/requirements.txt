@@ -1,6 +1,0 @@
-/
-  server/            ← Node / Express / TypeScript backend
-  ml-backend/        ← the Python Flask app for ML
-  package.json
-  tsconfig.json
-  …
