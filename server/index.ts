@@ -3,9 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { setupAuth } from "./auth";
 import routes from "./routes";
-import { setupVite } from "./vite"; // your custom vite middleware setup
+import { setupVite } from "./vite"; 
 import { createServer } from "http";
-import { createProxyMiddleware } from "http-proxy-middleware";
 import path from "path";
 import dashboardRoute from "./routes/dashboard";
 import livestockRoutes from "./routes/livestock";
@@ -17,18 +16,19 @@ import forumRoutes from "./forum";
 import nutritionRoute from "./routes/nutrition";
 import translateRoute from "./routes/translate";
 
+// NEW dependencies for Node → Flask
+import { spawn } from "child_process";
+import multer from "multer";
+import axios from "axios";
+import FormData from "form-data";
+
 // ES module __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dataDir = path.join(__dirname, "data");
-
 dotenv.config();
 const app = express();
-
-// Use the PORT from environment variables (Render sets this)
-const PORT = Number(process.env.PORT) || 5000;
-const HOST = "0.0.0.0"; // Must be 0.0.0.0 for Render external access
+const port = process.env.PORT || 5000;
 
 // Parse JSON
 app.use(express.json());
@@ -50,16 +50,52 @@ app.use("/api/chat", chatRoute);
 // General /api routes
 app.use("/api", routes);
 
-// Proxy to Flask backend for diagnosis
-app.use(
-  "/api/diagnosis",
-  createProxyMiddleware({
-    target: "http://127.0.0.1:8000",
-    changeOrigin: true,
-    pathRewrite: { "^/api/diagnosis": "/predict" },
-    cookieDomainRewrite: "localhost", // ensures cookies from Flask are rewritten
-  })
-);
+// --- NEW: Start Flask ML backend ---
+const mlBackend = spawn("python", ["predict.py"], {
+  cwd: path.join(__dirname, "../ml-backend"),
+  stdio: "inherit",
+});
+
+mlBackend.on("close", (code) => {
+  console.log(`Flask ML backend stopped with code ${code}`);
+});
+
+// --- NEW: Absolute uploads path & Multer ---
+const UPLOADS_DIR = path.join(__dirname, "../ml-backend/uploads");
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const upload = multer({ dest: UPLOADS_DIR });
+
+// --- NEW: Proxy route for image diagnosis ---
+app.post("/api/diagnose-image", upload.single("file"), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(req.file.path));
+
+    const flaskResponse = await axios.post(
+      "http://127.0.0.1:5000/predict",
+      formData,
+      { headers: formData.getHeaders() }
+    );
+
+    res.json(flaskResponse.data);
+  } catch (error: any) {
+    if (error.response) {
+      console.error("Flask response error:", error.response.data);
+    } else {
+      console.error("Error forwarding request to Flask:", error.message);
+    }
+    res.status(500).json({ error: "Prediction failed" });
+  } finally {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+  }
+});
 
 // Other API routes
 app.use("/api/dashboard", dashboardRoute);
@@ -74,7 +110,7 @@ const httpServer = createServer(app);
 
 // Setup Vite
 setupVite(app, httpServer).then(() => {
-  httpServer.listen(PORT, HOST, () => {
-    console.log(`🚀 Dev server running at http://${HOST}:${PORT}`);
+  httpServer.listen(port, () => {
+    console.log(`🚀 Dev server running at http://localhost:${port}`);
   });
 });
