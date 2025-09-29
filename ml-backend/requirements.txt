@@ -1,9 +1,10 @@
 flask
 flask-cors
-tensorflow
-numpy
-werkzeug
 gunicorn
+numpy
 pandas
 scikit-learn
 joblib
+tensorflow
+keras
+pillow
